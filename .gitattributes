@@ -1,5 +1,6 @@
 # Golden files are compared byte for byte: keep LF on every checkout (Windows CI included).
 test-resources/**/*.txt text eol=lf
 test-resources/*.txt text eol=lf
+test-resources/**/*.sql text eol=lf
 *.brM3 binary
 *.brMj binary

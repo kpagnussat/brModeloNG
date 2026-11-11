@@ -1,8 +1,12 @@
 import java.awt.Graphics2D;
+import java.awt.SecondaryLoop;
+import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import javax.imageio.ImageIO;
 import javax.swing.RootPaneContainer;
 import javax.swing.SwingUtilities;
@@ -74,15 +78,34 @@ public class SnapDialogs {
         ImageIO.write(image, "png", out);
     }
 
+    // Called on the EDT. Opening reads the file in a worker process and completes later on
+    // the EDT, so events keep being dispatched here until it has.
     static controlador.Diagrama open(File f) throws Exception {
         controlador.Editor ed = principal.Aplicacao.fmPrincipal.getEditor();
         Method m = controlador.Editor.class.getDeclaredMethod("AbrirDiagramaFromFile", File.class);
         m.setAccessible(true);
-        m.invoke(ed, f);
+        @SuppressWarnings("unchecked")
+        CompletableFuture<controlador.Diagrama> aberto = (CompletableFuture<controlador.Diagrama>) m.invoke(ed, f);
+        SecondaryLoop espera = Toolkit.getDefaultToolkit().getSystemEventQueue().createSecondaryLoop();
+        // exit goes through the queue, so it cannot run before enter has started pumping.
+        aberto.whenComplete((d, e) -> SwingUtilities.invokeLater(espera::exit));
+        if (!aberto.isDone()) espera.enter();
+        controlador.Diagrama d = aberto.get(1, TimeUnit.MINUTES);
+        if (d == null) throw new IllegalStateException("not opened: " + f);
         return ed.diagramaAtual;
     }
 
-    public static void main(String[] a) throws Exception {
+    // Any failure ends the process: the frame would otherwise keep the JVM, and a CI step, alive.
+    public static void main(String[] a) {
+        try {
+            run(a);
+        } catch (Throwable t) {
+            t.printStackTrace();
+            System.exit(1);
+        }
+    }
+
+    static void run(String[] a) throws Exception {
         String laf = a[0];
         float scale = Float.parseFloat(a[1]);
         System.setProperty("flatlaf.uiScale", a[1]);

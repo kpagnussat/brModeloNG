@@ -123,6 +123,13 @@ class TrabalhadorImportacaoTest {
     }
 
     private static boolean vivo(String marca) {
+        if (System.getProperty("os.name", "").startsWith("Windows")) {
+            // Windows does not report other processes' arguments, so the mark cannot be seen.
+            // The worker is a child of this JVM there, which is how the application kills it.
+            // Only Java children: a console host may sit beside it.
+            return ProcessHandle.current().descendants().anyMatch(h -> h.isAlive()
+                    && h.info().command().map(c -> c.toLowerCase(java.util.Locale.ROOT).matches(".*[\\\\/]javaw?(\\.exe)?")).orElse(false));
+        }
         return ProcessHandle.allProcesses().anyMatch(h -> h.info().arguments().map(a -> List.of(a).contains(marca)).orElse(false));
     }
 
