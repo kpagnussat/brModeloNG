@@ -81,9 +81,9 @@ A especialização separa subconjuntos de uma entidade genérica; generalizar é
 
 **Total**: toda ocorrência do supertipo pertence a algum subtipo. **Parcial**: algumas podem não pertencer. **Exclusiva**: uma ocorrência pertence a no máximo um dos subtipos. **Compartilhada**, chamada **não exclusiva** no programa: uma ocorrência pode pertencer a mais de um. Totalidade e exclusividade são critérios independentes.
 
-1. Para a estrutura exclusiva, escolha **Nova Especialização (exclusiva)** e clique na entidade genérica. Ela cria um triângulo e uma entidade especializada.
-2. Para a estrutura não exclusiva, escolha **Nova Especialização (duas entidades)** sobre a entidade genérica. O programa cria ramos com triângulos separados.
-3. Selecione o triângulo e ajuste **Esp. parcial** ou **Esp. total**. **Esp. exclusiva** e **Esp. não exclusiva** são indicações calculadas da estrutura, apenas para leitura.
+1. Escolha **Nova Especialização (exclusiva)** e clique na entidade genérica para criar um triângulo com uma entidade especializada, ou **Nova Especialização (duas entidades)** para criar um triângulo com duas.
+2. Selecione o triângulo e ajuste **Esp. parcial** ou **Esp. total**.
+3. Para trocar entre exclusiva e não exclusiva, marque **Esp. exclusiva** ou **Esp. não exclusiva**. Na exclusiva, um só triângulo liga a entidade genérica a todas as especializadas; na não exclusiva, cada especializada tem o seu triângulo. O programa redesenha os triângulos, e **Desfazer** volta ao desenho anterior. Com uma só entidade especializada não há o que trocar, e as duas indicações ficam só para leitura.
 4. Nomeie os subtipos e confira as ligações. **Nova Especialização** cria apenas o triângulo; você precisa ligá-lo corretamente antes de usá-lo. A indicação **Mal formatada** pede revisão dessas ligações.
 
 ![Especialização Aluno e Bolsista no fixture](img/especializacao.png)

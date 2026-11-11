@@ -8,7 +8,7 @@ O modelo lógico organiza o domínio em tabelas, campos e restrições. Uma chav
 2. Nomeie a tabela pelo **Nome** no Inspector.
 3. Use uma ferramenta de **Novo Campo** e clique sobre a tabela. As variantes da paleta têm dicas para campo comum, chave primária, chave estrangeira e chave primária/estrangeira.
 4. Selecione o campo, nomeie-o e ajuste **Tipo de campo**. Por exemplo, `INTEGER` ou `VARCHAR(120)`. Os tipos são textos do modelo; confira a sintaxe no SGBD que você usará.
-5. Para editar vários campos, use **Diagrama → Editar campos**. **Diagrama → Editar tipos** agrupa a edição dos tipos.
+5. Para editar vários campos, use **Diagrama → Editar campos**. **Diagrama → Editar tipos** agrupa a edição dos tipos. Nesses editores, a lista sugere os tipos do SQL padrão e `UUID`, que existe no PostgreSQL e no H2; no MySQL use `CHAR(36)`, e no SQL Server, `UNIQUEIDENTIFIER`.
 
 ![Editor de campos do modelo lógico inventado](img/campos.png)
 

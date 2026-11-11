@@ -144,11 +144,9 @@ class EditorAutosaveTest {
         writer.submit(() -> await(release));
         String[] before = new String[1];
         try {
+            assertNotNull(AberturaNoEditor.abrir(editor, Path.of("test-resources/fixtures", name + ".brM3").toFile()));
             edt(() -> {
                 try {
-                    Method open = Editor.class.getDeclaredMethod("AbrirDiagramaFromFile", java.io.File.class);
-                    open.setAccessible(true);
-                    open.invoke(editor, Path.of("test-resources/fixtures", name + ".brM3").toFile());
                     editor.diagramaAtual.SetNome("snapshot");
                     editor.diagramaAtual.setMudou(true);
                     before[0] = CanonicalDump.dump(editor.diagramaAtual);
@@ -182,6 +180,43 @@ class EditorAutosaveTest {
             } catch (Exception e) { throw new RuntimeException(e); }
             finally { accept.stop(); }
         });
+    }
+
+    // Guards the size limit on the editor's own entry points: opening .brM3/.brMj and the
+    // recovery file. Sparse files report their size without being written.
+    @Test void oversizedFilesAreRefusedOnEveryOpenPath() throws Exception {
+        Path dir = Files.createTempDirectory("limites");
+        Path brm3 = esparso(dir.resolve("grande.brM3"), util.LimitesEntrada.BINARIO_BYTES + 1);
+        Path brmj = esparso(dir.resolve("grande.brMj"), util.LimitesEntrada.JSON_BYTES + 1);
+        esparso(recovery, util.LimitesEntrada.BINARIO_BYTES + 1);
+        Diagrama[] inicial = new Diagrama[1];
+        edt(() -> inicial[0] = editor.diagramaAtual);
+        for (Path p : new Path[]{brm3, brmj}) {
+            assertNull(AberturaNoEditor.abrir(editor, p.toFile()), p.getFileName() + " is not opened");
+            edt(() -> {
+                assertSame(inicial[0], editor.diagramaAtual, p.getFileName() + " is not opened");
+                assertTrue(ultimoLog().contains(p.getFileName() + ": "), ultimoLog());
+            });
+        }
+        edt(() -> {
+            try {
+                // Refused before reading, so no recovery prompt is shown.
+                assertFalse(editor.LoadAutoSave());
+                assertTrue(ultimoLog().contains(" > " + util.LimitesEntrada.BINARIO_BYTES), ultimoLog());
+            } catch (Exception e) { throw new RuntimeException(e); }
+        });
+    }
+
+    private static Path esparso(Path p, long tamanho) throws Exception {
+        try (var f = new java.io.RandomAccessFile(p.toFile(), "rw")) { f.setLength(tamanho); }
+        return p;
+    }
+
+    private static String ultimoLog() {
+        synchronized (util.BrLogger.Logs) {
+            var e = util.BrLogger.Logs.get(util.BrLogger.Logs.size() - 1);
+            return e.Tipo + e.Complemento + e.Valor;
+        }
     }
 
     private static void acceptOption(Container container) {

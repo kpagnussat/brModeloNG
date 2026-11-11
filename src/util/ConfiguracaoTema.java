@@ -22,6 +22,6 @@ public final class ConfiguracaoTema {
             result = source + (source.isEmpty() || source.endsWith("\n") || source.endsWith("\r") ? "" : newline)
                     + replacement + newline;
         }
-        Files.writeString(path, result, StandardCharsets.ISO_8859_1);
+        GravacaoAtomica.gravar(path, saida -> saida.write(result.getBytes(StandardCharsets.ISO_8859_1)));
     }
 }

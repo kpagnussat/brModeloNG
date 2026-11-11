@@ -3,13 +3,29 @@ name: CI
 on:
   push:
   pull_request:
+  # Weekly dependency audit: new vulnerabilities are published without any push here.
+  schedule:
+    - cron: '17 6 * * 1'
 
 permissions:
   contents: read
 
 jobs:
+  audit:
+    name: Dependency audit (OSV)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check libraries against the OSV database
+        run: bash packaging/audit-dependencies.sh
+
   build:
     name: Build (${{ matrix.os }})
+    if: github.event_name != 'schedule'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
@@ -38,14 +54,43 @@ jobs:
             sudo apt-get update
             sudo apt-get install --yes xvfb xauth
           fi
+      # The sandbox tests must run here, not skip: Ubuntu runners restrict unprivileged user
+      # namespaces through AppArmor, which bubblewrap needs.
+      - name: Enable bubblewrap sandboxes
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+          bwrap --unshare-all --ro-bind / / true
       # No official jar is redistributed: its compatibility tests skip via JUnit assumptions.
       # The manual portal test remains opt-in; Xvfb has no desktop session bus.
       - name: Build and test with GUI coverage
         if: runner.os == 'Linux'
-        run: xvfb-run -a ./gradlew --no-daemon --dependency-verification strict build -Pgui
+        run: xvfb-run -a ./gradlew --no-daemon --dependency-verification strict build -Pgui -PexigirIsolamento
       - name: Build and test headless (explicitly exclude the gui tag)
         if: runner.os != 'Linux'
         run: ./gradlew --no-daemon --dependency-verification strict build -Pheadless
+      # The installer adds custom WiX actions (outbound firewall rules), so every push builds it.
+      - name: Ensure WiX 3 is on PATH (JDK 21 requirement)
+        if: runner.os == 'Windows'
+        run: |
+          if ! find '/c/Program Files (x86)' -maxdepth 3 -name candle.exe -print -quit | grep -q .; then
+            choco install wixtoolset --version=3.14.1 --yes --allow-downgrade --no-progress
+          fi
+          wix_bin=$(dirname "$(find '/c/Program Files (x86)' -maxdepth 3 -name candle.exe -print -quit)")
+          test -f "$wix_bin/light.exe"
+          cygpath -w "$wix_bin" >> "$GITHUB_PATH"
+      - name: Build the Windows installer
+        if: runner.os == 'Windows'
+        run: ./gradlew --no-daemon --dependency-verification strict jpackageMsi
+      - name: Upload the Windows installer
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: msi-windows
+          path: build/jpackage/msi/*.msi
+          if-no-files-found: error
       - name: Build and smoke-test the Linux app-image
         if: runner.os == 'Linux'
         run: |

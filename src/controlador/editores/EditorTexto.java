@@ -25,7 +25,6 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.KeyEvent;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import javax.swing.JComponent;
 import javax.swing.JOptionPane;
@@ -60,11 +59,11 @@ public class EditorTexto extends javax.swing.JDialog implements ClipboardOwner {
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
         getRootPane().registerKeyboardAction(e -> {
             setVisible(false);
-        }, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, java.awt.event.InputEvent.CTRL_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        }, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, util.Atalhos.mascara()), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         getRootPane().registerKeyboardAction(e -> {
             btnCopyActionPerformed(null);
-        }, KeyStroke.getKeyStroke(KeyEvent.VK_C, java.awt.event.InputEvent.CTRL_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        }, KeyStroke.getKeyStroke(KeyEvent.VK_C, util.Atalhos.mascara()), JComponent.WHEN_IN_FOCUSED_WINDOW);
         setTitle(Editor.fromConfiguracao.getValor("Controler.interface.Titulo.EditorDeCodigo"));
         util.LayoutDialogos.texto(this, jToolBar1, scrPrincipal, jPanel2);
     }
@@ -220,8 +219,11 @@ public class EditorTexto extends javax.swing.JDialog implements ClipboardOwner {
             return;
         }
         try {
-            FileWriter fw = new FileWriter(arq.getAbsoluteFile(), false);
-            TextArea.write(fw);
+            util.GravacaoAtomica.gravar(arq.toPath(), saida -> {
+                try (java.io.Writer fw = new java.io.OutputStreamWriter(saida)) {
+                    TextArea.write(fw);
+                }
+            });
         } catch (IOException iOException) {
             util.BrLogger.Logger("ERROR_DIAGRAMA_SAVE_ANY", iOException.getMessage());
         }

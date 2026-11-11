@@ -46,8 +46,8 @@ public class MasterCli extends JPanel implements KeyListener {
         setFocusable(true);
         addKeyListener(this);
         // <editor-fold defaultstate="collapsed" desc="Teclas">
-        KeyStroke key_crtl = KeyStroke.getKeyStroke(KeyEvent.VK_CONTROL, InputEvent.CTRL_DOWN_MASK);
-        KeyStroke key_crtl_up = KeyStroke.getKeyStroke(KeyEvent.VK_CONTROL, 0, true);
+        KeyStroke key_crtl = KeyStroke.getKeyStroke(util.Atalhos.tecla(), util.Atalhos.mascara());
+        KeyStroke key_crtl_up = KeyStroke.getKeyStroke(util.Atalhos.tecla(), 0, true);
         KeyStroke key_shift = KeyStroke.getKeyStroke(KeyEvent.VK_SHIFT, InputEvent.SHIFT_DOWN_MASK);
         KeyStroke key_shift_up = KeyStroke.getKeyStroke(KeyEvent.VK_SHIFT, 0, true);
         KeyStroke key_alt = KeyStroke.getKeyStroke(KeyEvent.VK_ALT, InputEvent.ALT_DOWN_MASK);
@@ -146,7 +146,7 @@ public class MasterCli extends JPanel implements KeyListener {
             return;
         }
 
-        if (e.getModifiers() == KeyEvent.CTRL_MASK) {
+        if (e.getModifiersEx() == util.Atalhos.mascara()) {
             return;
         }
 

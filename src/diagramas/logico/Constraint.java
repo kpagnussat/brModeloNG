@@ -187,7 +187,7 @@ public class Constraint implements Serializable {
             return "()";
         }
         String cmpsD = "";
-        cmpsD = lst.stream().map((cx) -> (cx == null ? "[]" : cx.getTexto().trim().isEmpty() ? "?" : cx.getTexto()) + ", ").reduce(cmpsD, String::concat);
+        cmpsD = lst.stream().map((cx) -> (cx == null ? "[]" : cx.getTexto().trim().isEmpty() ? "?" : NomeSql.nome(cx.getTexto())) + ", ").reduce(cmpsD, String::concat);
         return "(" + cmpsD.substring(0, cmpsD.length() - 2) + ")";
     }
 
@@ -198,7 +198,7 @@ public class Constraint implements Serializable {
         String cmpsD = "";
         cmpsD = lst.stream().map((cx) -> (cx == null ? "[]"
                 : (cx.getTexto().trim().isEmpty() ? "?"
-                : cx.getTexto())
+                : NomeSql.nome(cx.getTexto()))
                 + (getOrigem(cx) == null ? "???" : ""))
                 + ", ")
                 .reduce(cmpsD, String::concat);
@@ -294,7 +294,7 @@ public class Constraint implements Serializable {
             default:
                 img = "Constraint_UN";
         }
-        root.add(new TreeItem(((isNomeada() && !getNome().isEmpty())? getNome() : Editor.fromConfiguracao.getValor("diagrama.Constraint.nome")), getTabela().getID(), "diagrama." + img + ".img"));
+        root.add(new TreeItem(((isNomeada() && !getNome().isEmpty())? getNome() : Editor.fromConfiguracao.getValor("diagrama.Constraint.nome")), getTabela().getID(), img));
     }
 
     public enum CONSTRAINT_TIPO {
@@ -769,7 +769,7 @@ public class Constraint implements Serializable {
         switch (getTipo()) {
             case tpPK:
                 if (isNomeada() && !getNome().trim().isEmpty()) {
-                    txt = "ALTER TABLE " + getTabela().getTexto() + " ADD CONSTRAINT " + getPrefixo() + getNome().trim() + " PRIMARY KEY " + getCamposStr(getCamposDeOrigem());
+                    txt = "ALTER TABLE " + NomeSql.nome(getTabela().getTexto()) + " ADD CONSTRAINT " + NomeSql.nome(getPrefixo() + getNome().trim()) + " PRIMARY KEY " + getCamposStr(getCamposDeOrigem());
                     txt += sepa;
                 } else {
                     txt = "PRIMARY KEY " + getCamposStr(getCamposDeOrigem());
@@ -777,15 +777,15 @@ public class Constraint implements Serializable {
                 break;
             case tpUNIQUE:
                 if (isNomeada() && !getNome().trim().isEmpty()) {
-                    txt = "ALTER TABLE "  + getPrefixo() + getTabela().getTexto() + " ADD CONSTRAINT " + getNome().trim() + " UNIQUE " + getCamposStr(getCamposDeOrigem());
+                    txt = "ALTER TABLE "  + NomeSql.nome(getPrefixo() + getTabela().getTexto()) + " ADD CONSTRAINT " + NomeSql.nome(getNome().trim()) + " UNIQUE " + getCamposStr(getCamposDeOrigem());
                     txt += sepa;
                 } else {
                     txt = "UNIQUE " + getCamposStr(getCamposDeOrigem());
                 }
                 break;
             case tpFK:
-                String nome = (isNomeada() && !getNome().trim().isEmpty()) ?  getPrefixo() + getNome() : getPrefixo() + Editor.fromConfiguracao.getValor("Controler.interface.mensagem.msgcov.fk.prefix")
-                        + getTabela().getTexto() + "_" + String.valueOf(getTabela().getConstraints().indexOf(this) + 1);
+                String nome = NomeSql.nome((isNomeada() && !getNome().trim().isEmpty()) ?  getPrefixo() + getNome() : getPrefixo() + Editor.fromConfiguracao.getValor("Controler.interface.mensagem.msgcov.fk.prefix")
+                        + getTabela().getTexto() + "_" + String.valueOf(getTabela().getConstraints().indexOf(this) + 1));
 
                 String tmpCD = getCamposStr(getCamposDeOrigem()).replaceAll("\\[\\]", "???");
                 String tmpCO = getCamposStrCheck(getCamposDeDestino());
@@ -797,14 +797,16 @@ public class Constraint implements Serializable {
                         tmpCD = tmpCD.substring(0, tmpCD.length() - 1) + (getCamposDeDestino().size() > 0 ? ", " : "") + "???)";
                     }
                 }
-                txt = "ALTER TABLE " + getPrefixo() + getTabela().getTexto() + " ADD CONSTRAINT " + nome + "\nFOREIGN KEY " + tmpCO + "\n";
-                txt += "REFERENCES " + (getConstraintOrigem() == null ? "??? (???)" : getPrefixo() + getConstraintOrigem().getTabela().getTexto() + " " + tmpCD);
-                if (!getDdlOnDelete().isEmpty() && !getDdlOnUpdate().isEmpty()) {
-                    txt += "\nON DELETE " + getDdlOnDelete() + " ON UPDATE " + getDdlOnUpdate();
-                } else if (!getDdlOnDelete().isEmpty() || !getDdlOnUpdate().isEmpty()) {
+                txt = "ALTER TABLE " + NomeSql.nome(getPrefixo() + getTabela().getTexto()) + " ADD CONSTRAINT " + nome + "\nFOREIGN KEY " + tmpCO + "\n";
+                txt += "REFERENCES " + (getConstraintOrigem() == null ? "??? (???)" : NomeSql.nome(getPrefixo() + getConstraintOrigem().getTabela().getTexto()) + " " + tmpCD);
+                String onDelete = NomeSql.acao(getDdlOnDelete());
+                String onUpdate = NomeSql.acao(getDdlOnUpdate());
+                if (!onDelete.isEmpty() && !onUpdate.isEmpty()) {
+                    txt += "\nON DELETE " + onDelete + " ON UPDATE " + onUpdate;
+                } else if (!onDelete.isEmpty() || !onUpdate.isEmpty()) {
                     txt += "\n";
-                    txt += !getDdlOnDelete().isEmpty() ? "ON DELETE " + getDdlOnDelete() : "";
-                    txt += !getDdlOnUpdate().isEmpty() ? "ON UPDATE " + getDdlOnUpdate() : "";
+                    txt += !onDelete.isEmpty() ? "ON DELETE " + onDelete : "";
+                    txt += !onUpdate.isEmpty() ? "ON UPDATE " + onUpdate : "";
                 }
                 txt += sepa;
                 break;

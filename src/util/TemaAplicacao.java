@@ -40,7 +40,12 @@ public final class TemaAplicacao {
         claro = CatalogoTemas.preferido(salvo(CLARO), false);
         escuro = CatalogoTemas.preferido(salvo(ESCURO), true);
         if (System.getProperty("swing.systemlaf") != null) return false;
-        return instalarTema(CatalogoTemas.resolver(escolha, claro, escuro, escolha.equals("auto") && TemaDoSistema.escuroDetectado()));
+        FonteInterface.antesDoTema();
+        CatalogoTemas.Tema tema = CatalogoTemas.resolver(escolha, claro, escuro, escolha.equals("auto") && TemaDoSistema.escuroDetectado());
+        boolean ok = instalarTema(tema);
+        // Once, when the desktop font turned out to be missing: again with the bundled one.
+        if (ok && FonteInterface.reservaNecessaria()) ok = instalarTema(tema);
+        return ok;
     }
     private static boolean instalarTema(CatalogoTemas.Tema tema) {
         boolean ok = FlatLaf.setup(tema.fabrica().get());

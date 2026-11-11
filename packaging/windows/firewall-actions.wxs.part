@@ -1,0 +1,33 @@
+    <!-- brModelo NG: outbound block rules for the program and its import worker, all named
+         "brModelo NG - sem rede", one per executable. Every run deletes them by name and,
+         unless the product is being removed, adds them again after the files are installed.
+         Rollback puts back the state before the run: a failed fresh install leaves no rule,
+         a failed repair or uninstall has its rules again. Rollback actions run in reverse
+         order, so the re-adds (only when the product was already installed) are scheduled
+         before the delete. netsh runs elevated; if it fails (firewall service off), the
+         installation goes on without the rules. -->
+    <CustomAction Id="BrFirewallRestoreApp" BinaryKey="WixCA" DllEntry="WixQuietExec64" Execute="rollback" Impersonate="no" Return="ignore"/>
+    <SetProperty Id="BrFirewallRestoreApp" Sequence="execute" Before="BrFirewallRestoreApp"
+      Value='"[System64Folder]netsh.exe" advfirewall firewall add rule name="brModelo NG - sem rede" dir=out action=block enable=yes profile=any program="[INSTALLDIR]brModelo NG.exe"'/>
+    <CustomAction Id="BrFirewallRestoreJavaw" BinaryKey="WixCA" DllEntry="WixQuietExec64" Execute="rollback" Impersonate="no" Return="ignore"/>
+    <SetProperty Id="BrFirewallRestoreJavaw" Sequence="execute" Before="BrFirewallRestoreJavaw"
+      Value='"[System64Folder]netsh.exe" advfirewall firewall add rule name="brModelo NG - sem rede" dir=out action=block enable=yes profile=any program="[INSTALLDIR]runtime\bin\javaw.exe"'/>
+    <CustomAction Id="BrFirewallRestoreJava" BinaryKey="WixCA" DllEntry="WixQuietExec64" Execute="rollback" Impersonate="no" Return="ignore"/>
+    <SetProperty Id="BrFirewallRestoreJava" Sequence="execute" Before="BrFirewallRestoreJava"
+      Value='"[System64Folder]netsh.exe" advfirewall firewall add rule name="brModelo NG - sem rede" dir=out action=block enable=yes profile=any program="[INSTALLDIR]runtime\bin\java.exe"'/>
+    <CustomAction Id="BrFirewallRollback" BinaryKey="WixCA" DllEntry="WixQuietExec64" Execute="rollback" Impersonate="no" Return="ignore"/>
+    <SetProperty Id="BrFirewallRollback" Sequence="execute" Before="BrFirewallRollback"
+      Value='"[System64Folder]netsh.exe" advfirewall firewall delete rule name="brModelo NG - sem rede"'/>
+    <CustomAction Id="BrFirewallRemove" BinaryKey="WixCA" DllEntry="WixQuietExec64" Execute="deferred" Impersonate="no" Return="ignore"/>
+    <SetProperty Id="BrFirewallRemove" Sequence="execute" Before="BrFirewallRemove"
+      Value='"[System64Folder]netsh.exe" advfirewall firewall delete rule name="brModelo NG - sem rede"'/>
+    <CustomAction Id="BrFirewallApp" BinaryKey="WixCA" DllEntry="WixQuietExec64" Execute="deferred" Impersonate="no" Return="ignore"/>
+    <SetProperty Id="BrFirewallApp" Sequence="execute" Before="BrFirewallApp"
+      Value='"[System64Folder]netsh.exe" advfirewall firewall add rule name="brModelo NG - sem rede" dir=out action=block enable=yes profile=any program="[INSTALLDIR]brModelo NG.exe"'/>
+    <CustomAction Id="BrFirewallJavaw" BinaryKey="WixCA" DllEntry="WixQuietExec64" Execute="deferred" Impersonate="no" Return="ignore"/>
+    <SetProperty Id="BrFirewallJavaw" Sequence="execute" Before="BrFirewallJavaw"
+      Value='"[System64Folder]netsh.exe" advfirewall firewall add rule name="brModelo NG - sem rede" dir=out action=block enable=yes profile=any program="[INSTALLDIR]runtime\bin\javaw.exe"'/>
+    <CustomAction Id="BrFirewallJava" BinaryKey="WixCA" DllEntry="WixQuietExec64" Execute="deferred" Impersonate="no" Return="ignore"/>
+    <SetProperty Id="BrFirewallJava" Sequence="execute" Before="BrFirewallJava"
+      Value='"[System64Folder]netsh.exe" advfirewall firewall add rule name="brModelo NG - sem rede" dir=out action=block enable=yes profile=any program="[INSTALLDIR]runtime\bin\java.exe"'/>
+

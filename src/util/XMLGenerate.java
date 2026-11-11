@@ -15,6 +15,7 @@ import java.awt.Rectangle;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.*;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.*;
@@ -45,11 +46,34 @@ public class XMLGenerate {
         return null;
     }
     
+    /**
+     * Parser for XML that comes from outside the program (opened files and pasted text).
+     * brModelo never writes a DOCTYPE, so any DTD is refused: this blocks external entities
+     * (local files read into the diagram and sent over the network) and entity expansion.
+     * The other settings are a second layer. If the platform parser does not support one of
+     * them, setFeature throws and the input is not read, instead of being read without it.
+     */
+    static DocumentBuilder ParserSeguro() throws ParserConfigurationException {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+        factory.setXIncludeAware(false);
+        factory.setExpandEntityReferences(false);
+        return factory.newDocumentBuilder();
+    }
+
     public static Document LoadDocument(File arq) {
+        if (arq.length() > LimitesEntrada.XML_BYTES) {
+            LimitesEntrada.recusar(arq.getName(), arq.length(), LimitesEntrada.XML_BYTES);
+            return null;
+        }
         try {
-            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-            Document doc = documentBuilder.parse(arq);
+            Document doc = ParserSeguro().parse(arq);
             doc.getDocumentElement().normalize();
             return doc;
         } catch (SAXException | IOException | ParserConfigurationException ex) {
@@ -58,11 +82,14 @@ public class XMLGenerate {
         return null;
     }
     
+    /** Pasted text and ready-made parts; the limit counts characters. */
     public static Document LoadDocument(String inS) {
+        if (inS.length() > LimitesEntrada.XML_BYTES) {
+            LimitesEntrada.recusar("XML", inS.length(), LimitesEntrada.XML_BYTES);
+            return null;
+        }
         try {
-            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-            Document doc = documentBuilder.parse(new InputSource(new StringReader(inS)));
+            Document doc = ParserSeguro().parse(new InputSource(new StringReader(inS)));
             doc.getDocumentElement().normalize();
             return doc;
         } catch (SAXException | IOException | ParserConfigurationException ex) {

@@ -83,10 +83,10 @@ public final class AbasDiagramas {
             }
             for (int i = 0; i < documents.size(); i++) {
                 Diagrama diagram = documents.get(i);
-                String name = (diagram.getMudou() ? "*" : "") + diagram.getNomeFormatado();
+                String name = util.InterfaceSemHtml.texto((diagram.getMudou() ? "*" : "") + diagram.getNomeFormatado());
                 if (!name.equals(tabs.getTitleAt(i))) tabs.setTitleAt(i, name);
                 String path = diagram.getArquivo();
-                String tooltip = path == null || path.isEmpty() ? diagram.getNomeFormatado()
+                String tooltip = path == null || path.isEmpty() ? util.InterfaceSemHtml.texto(diagram.getNomeFormatado())
                         : new java.io.File(path).getAbsolutePath();
                 if (!tooltip.equals(tabs.getToolTipTextAt(i))) tabs.setToolTipTextAt(i, tooltip);
             }

@@ -21,10 +21,12 @@ public class ImageGenerate {
         super();
     }
     
-    public static BufferedImage CriarImagem(int w, int h) {
+    /** Every diagram image goes through here, so one check bounds them all. */
+    public static BufferedImage CriarImagem(int w, int h) throws LimitesEntrada.Excedido {
         int type = BufferedImage.TYPE_INT_ARGB;
         if (w < 1) w = 1;
         if (h < 1) h = 1;
+        LimitesEntrada.conferirPixels("imagem", w, h);
         BufferedImage image = new BufferedImage(w, h, type);
         return image;
     }
@@ -54,13 +56,13 @@ public class ImageGenerate {
      * @param diag
      * @return 
      */
-    public static BufferedImage geraImagem(Diagrama diag) {
+    public static BufferedImage geraImagem(Diagrama diag) throws LimitesEntrada.Excedido {
         Point p = diag.getPontoExtremo();
         p = new Point(Math.max(p.x, 2), Math.max(p.y, 2));
         return geraImagemForPrn(diag, p.x, p.y);
     }
 
-    public static BufferedImage geraImagemForPrn(Diagrama diag, int wdt, int ht) {
+    public static BufferedImage geraImagemForPrn(Diagrama diag, int wdt, int ht) throws LimitesEntrada.Excedido {
         BufferedImage res = CriarImagem(wdt, ht);
         Graphics2D g = (Graphics2D)res.getGraphics();
         g.setPaint(diag.getBackground());
@@ -70,7 +72,7 @@ public class ImageGenerate {
         return res;
     }
 
-    public static BufferedImage geraImagemForPrnSelecao(Diagrama diag, int wdt, int ht) {
+    public static BufferedImage geraImagemForPrnSelecao(Diagrama diag, int wdt, int ht) throws LimitesEntrada.Excedido {
         
         BufferedImage res = CriarImagem(wdt, ht);
         Graphics2D g = (Graphics2D)res.getGraphics();

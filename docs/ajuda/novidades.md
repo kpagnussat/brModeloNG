@@ -15,7 +15,7 @@ O NG dá continuidade ao brModelo oficial **3.3.2**, com melhorias de interface 
 
 O NG usa pastas próprias para preferências, recuperação e partes prontas. O auto-salvamento registra snapshots e escreve a recuperação sem fazer a gravação de disco no fluxo de interação da janela.
 
-Arquivos binários e JSON passam por validação das classes permitidas. Isso não altera a regra de compartilhamento: use `.brM3` para o oficial; veja [Problemas comuns](problemas-comuns.md).
+Arquivos binários e JSON passam por validação das classes permitidas e são lidos por um processo separado, com limite de memória e de tempo, para que um arquivo danificado ou malicioso não trave o programa. Durante a leitura, a janela continua respondendo, e uma abertura demorada pode ser cancelada. Ao salvar, o arquivo anterior só é substituído depois que a gravação termina. Isso não altera a regra de compartilhamento: use `.brM3` para o oficial; veja [Problemas comuns](problemas-comuns.md).
 
 A ajuda agora é um site local gerado de Markdown e incluído no jar e nos pacotes. Ela abre no navegador em **Ajuda → Ajuda**, ou **F1**. O conteúdo também é legível no repositório, sem precisar do aplicativo.
 

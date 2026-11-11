@@ -10,8 +10,8 @@ finish-args:
   - --socket=x11
   - --share=ipc
   - --device=dri
-  # Other locations are granted by the existing XDG FileChooser portal backend.
-  - --filesystem=xdg-documents
+  # No file system permission: files chosen in the XDG FileChooser portal, or opened from
+  # the file manager, are granted one by one through the document portal.
   - --env=JAVA_HOME=/app/jre
 modules:
   - name: openjdk

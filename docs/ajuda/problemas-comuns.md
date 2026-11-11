@@ -34,7 +34,21 @@ A ajuda no navegador segue `prefers-color-scheme` do navegador/sistema. Ela não
 
 O menu **Ajuda → Ajuda** extrai o site incluído na instalação para a pasta de estado do NG. Se o lançamento do navegador falhar, uma janela mostra o endereço e o caminho local para copiar. Abra o `index.html` local manualmente se necessário.
 
-No Flatpak, o endereço usa `127.0.0.1` enquanto o aplicativo permanece aberto, permitindo que o navegador carregue todas as páginas e imagens. Mantenha o NG aberto durante a consulta. Se a instalação não contiver os recursos, a janela informa a falha de extração; reinstale um pacote completo.
+No Flatpak, o navegador recebe a ajuda inteira numa única página, com as imagens incluídas, pelo portal do sistema. Se a instalação não contiver os recursos, a janela informa a falha de extração; reinstale um pacote completo.
+
+## O arquivo demora a abrir ou foi recusado
+
+Cada `.brM3` ou `.brMj` é lido por um processo separado, que tem limite de memória e de tempo; assim, um arquivo danificado ou malicioso não trava o NG. A janela continua respondendo durante a leitura. Se ela passar de meio segundo, aparece **Abrindo diagrama**, com **Cancelar**, que desiste da abertura na hora.
+
+Se o arquivo for recusado, nada é aberto e o motivo fica no indicador de log. Os motivos mais comuns são arquivo danificado, tamanho acima do limite (64 MiB para `.brM3`, 128 MiB para `.brMj`) ou leitura que passou de 30 segundos. Um diagrama legítimo muito grande, com milhares de itens, leva alguns segundos, bem abaixo desse prazo.
+
+## Apareceu um aviso de sessão X11
+
+Na sessão X11 do Linux, qualquer programa com janela pode enviar teclas a outras janelas, inclusive a um terminal. O NG lê os arquivos recebidos num processo sem tela, mas avisa uma vez, porque um defeito ainda desconhecido na janela poderia ser usado para digitar comandos. Para abrir arquivos de outras pessoas, escolha a sessão Wayland na tela de login; o aviso não volta a aparecer.
+
+## No Flatpak, um arquivo recente não abre
+
+O Flatpak não tem acesso direto às suas pastas: cada arquivo chega pelo seletor do sistema ou pelo gerenciador de arquivos. Arquivos que entraram nos recentes antes da versão 1.0.1, quando o Flatpak lia a pasta Documentos, podem não abrir pela lista. Abra cada um uma vez por **Arquivo → Abrir**; depois disso, ele volta a abrir pelos recentes.
 
 ## Uma operação falhou
 

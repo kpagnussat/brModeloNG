@@ -12,7 +12,8 @@ public final class EstadosVazios {
         if (!(view instanceof JTable || view instanceof JList || view instanceof JToolBar || view instanceof JPanel panel && panel.getLayout() == null)) return;
         if (scroll.getClientProperty("brmodelo.vazio") == view) return;
         scroll.putClientProperty("brmodelo.vazio", view);
-        JLabel hint = new JLabel(view instanceof JTable ? "Nenhum item disponível." : view instanceof JToolBar ? "<html><center>Nenhuma parte<br>salva.</center></html>" : "<html><center>Nenhum item<br>adicionado.</center></html>", SwingConstants.CENTER);
+        JLabel hint = InterfaceSemHtml.permitir(new JLabel("", SwingConstants.CENTER));
+        hint.setText(view instanceof JTable ? "Nenhum item disponível." : view instanceof JToolBar ? "<html><center>Nenhuma parte<br>salva.</center></html>" : "<html><center>Nenhum item<br>adicionado.</center></html>");
         hint.putClientProperty("FlatLaf.style", "foreground: $Label.disabledForeground");
         JPanel empty = new JPanel(new BorderLayout());
         empty.add(hint);

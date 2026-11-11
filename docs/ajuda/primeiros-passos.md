@@ -8,6 +8,8 @@ No topo ficam **Arquivo**, **Editar**, **Repositório**, **Diagrama** e **Ajuda*
 
 A paleta de artefatos muda conforme o tipo de diagrama. Passe o mouse sobre um botão para ler sua dica. Escolha uma ferramenta e clique na folha; ferramentas de ligação normalmente pedem um clique em cada objeto. Para voltar à seleção, pressione **Esc**.
 
+Depois de criar um objeto, a paleta volta para a seta. Para criar vários objetos seguidos, como os atributos de uma entidade, dê **clique duplo** na ferramenta: ela fica fixa até você pressionar **Esc**, clicar na seta ou escolher outra ferramenta. Segurar **Ctrl** (**Command** no macOS) ao clicar na folha também mantém a ferramenta depois daquele clique.
+
 As abas identificam os diagramas abertos. A barra de estado mostra mensagens da operação atual. O indicador de log, junto dela, permite abrir a janela de mensagens; erros ainda não lidos recebem destaque.
 
 ![Indicador de erro não lido na barra de estado](img/status.png)

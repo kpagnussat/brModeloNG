@@ -3,15 +3,12 @@ package controlador;
 import controlador.apoios.GuardaPadraoBrM;
 import controlador.apoios.InfoDiagrama;
 import desenho.FormaElementar;
-import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.io.IOException;
-import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
@@ -78,28 +75,12 @@ final class PersistenciaDiagrama {
         }
         Diagrama res = null;
 
-        String onome = arq.getName();
-        int dot = onome.lastIndexOf('.');
-        if (dot > 0) onome = onome.substring(0, dot);
+        String onome = nomeSemExtensao(arq);
 
         if (util.Arquivo.IsModelo(arq)) {
             try {
-                if (util.Arquivo.IsbrMj(arq)) {
-                    res = util.FormatoBrMj.ler(arq.toPath()).diagrama();
-                } else {
-                    try (ObjectInput in = new util.LeitorSeguro(new FileInputStream(arq))) {
-                        GuardaPadraoBrM seguranca = (GuardaPadraoBrM) in.readObject();
-                        res = seguranca.getDiagrama();
-                    }
-                }
-                res.setMaster(master);
-                //Recria o UID para se ter a certeza de que ele é único, não repetido por uma eventual cópaia do arquivo.
-                res.ReGeraUniversalUnicID();
-                res.setArquivo(arq.getAbsolutePath());
-                master.addLastOpened(arq.getAbsolutePath());
-                res.SetNome(onome);
-                return res;
-            } catch (ClassCastException | NullPointerException | IOException | ClassNotFoundException iOException) {
+                return prepararModelo(lerModelo(arq), arq, master);
+            } catch (ClassCastException | NullPointerException | IOException iOException) {
                 util.BrLogger.Logger("ERROR_DIAGRAMA_LOAD_FILE_BRM", iOException.getMessage());
                 return null;
             }
@@ -120,6 +101,35 @@ final class PersistenciaDiagrama {
             master.addLastOpened(arq.getAbsolutePath());
             return res;
         }
+    }
+
+    /**
+     * Reads and decodes a .brM3 or .brMj file. Decoding runs in the import worker, which may
+     * take up to its deadline on a hostile file, so this takes no lock and touches no editor
+     * state: AberturaEmSegundoPlano calls it off the EDT.
+     */
+    static Diagrama lerModelo(File arq) throws IOException {
+        boolean brMj = util.Arquivo.IsbrMj(arq);
+        byte[] bytes = util.LimitesEntrada.ler(arq, brMj ? util.LimitesEntrada.JSON_BYTES : util.LimitesEntrada.BINARIO_BYTES);
+        // Decoded by a separate worker process: the file may come from anyone.
+        return util.TrabalhadorImportacao.abrir(bytes, brMj);
+    }
+
+    /** On the EDT: attaches a diagram read by {@link #lerModelo} to the editor as that file. */
+    static Diagrama prepararModelo(Diagrama res, File arq, Editor master) {
+        res.setMaster(master);
+        //Recria o UID para se ter a certeza de que ele é único, não repetido por uma eventual cópaia do arquivo.
+        res.ReGeraUniversalUnicID();
+        res.setArquivo(arq.getAbsolutePath());
+        master.addLastOpened(arq.getAbsolutePath());
+        res.SetNome(nomeSemExtensao(arq));
+        return res;
+    }
+
+    private static String nomeSemExtensao(File arq) {
+        String onome = arq.getName();
+        int dot = onome.lastIndexOf('.');
+        return dot > 0 ? onome.substring(0, dot) : onome;
     }
 
     static synchronized Diagrama LoadFromBrm(GuardaPadraoBrM seguranca, Editor master) {
@@ -303,12 +313,14 @@ final class PersistenciaDiagrama {
                         throw e;
                     }
                 } else {
-                    try (ObjectOutput out = new ObjectOutputStream(new FileOutputStream(fileName))) {
-                        alvo.setArquivo("");
-                        GuardaPadraoBrM seg = new GuardaPadraoBrM(alvo);
-                        seg.versaoDiagrama = alvo.versaoA + "." + alvo.versaoB + "." + alvo.versaoC;
-                        out.writeObject(seg);
-                    }
+                    util.GravacaoAtomica.gravar(fileName.toPath(), saida -> {
+                        try (ObjectOutput out = new ObjectOutputStream(saida)) {
+                            alvo.setArquivo("");
+                            GuardaPadraoBrM seg = new GuardaPadraoBrM(alvo);
+                            seg.versaoDiagrama = alvo.versaoA + "." + alvo.versaoB + "." + alvo.versaoC;
+                            out.writeObject(seg);
+                        }
+                    });
                 }
                 alvo.setArquivo(fileName.getAbsolutePath());
                 alvo.master.addLastOpened(fileName.getAbsolutePath());
@@ -325,16 +337,18 @@ final class PersistenciaDiagrama {
         } else {
             try {
                 StringWriter ou = XMLGenerate.GeraXMLtoSaveFrom(alvo, false);
-                try (BufferedWriter out = new BufferedWriter(new FileWriter(fileName))) {
-                    out.write(ou.getBuffer().toString());
-                    alvo.setArquivo(fileName.getAbsolutePath());
-                    alvo.master.addLastOpened(fileName.getAbsolutePath());
+                util.GravacaoAtomica.gravar(fileName.toPath(), saida -> {
+                    try (Writer out = new OutputStreamWriter(saida)) {
+                        out.write(ou.getBuffer().toString());
+                    }
+                });
+                alvo.setArquivo(fileName.getAbsolutePath());
+                alvo.master.addLastOpened(fileName.getAbsolutePath());
 
-                    alvo.setMudou(false);
-                    alvo.master.DoAutoSaveCompleto();
-                    alvo.PerformInspector();
-                    return true;
-                }
+                alvo.setMudou(false);
+                alvo.master.DoAutoSaveCompleto();
+                alvo.PerformInspector();
+                return true;
             } catch (IOException iOException) {
                 util.BrLogger.Logger("ERROR_DIAGRAMA_SAVE_XML", iOException.getMessage());
                 alvo.setNome(txt);

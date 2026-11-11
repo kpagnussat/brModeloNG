@@ -225,11 +225,7 @@ public class DiagramaLogico extends Diagrama {
         }
         cliq1 = null;
         cliq2 = null;
-        if (!master.isControlDown()) {
-            setComando(null);
-        } else {
-            setComando(com);
-        }
+        ManterOuSoltarComando(com);
         if (resu != null) {
             resu.BringToFront();
         }
@@ -495,6 +491,22 @@ public class DiagramaLogico extends Diagrama {
         repaint();
     }
 
+    /** The SQL script shown by ConverterParaFisico: every table, then the foreign keys. */
+    public String ScriptDDL() {
+        String tmp = "/* " + NomeSql.comentario(getNomeFormatado()) + ": */";
+        List<Tabela> tabelas = getListaDeTabelas();
+        ArrayList<String> ddl = new ArrayList<>();
+        tabelas.forEach(t -> {
+            ddl.add("");
+            t.DDLGenerate(ddl, t.DDL_PEGAR_TABELAS);
+            t.DDLGenerate(ddl, t.DDL_PEGAR_INTEGRIDADE_PK_UN_NOMEADAS);
+        });
+        tabelas.forEach(t -> {
+            t.DDLGenerate(ddl, t.DDL_PEGAR_INTEGRIDADE_FK);
+        });
+        return ddl.stream().map(s -> "\n" + s).reduce(tmp, String::concat);
+    }
+
     public boolean ConverterParaFisico() {
         boolean vai = true;
         while (getListaDeTabelas().stream().anyMatch(t -> t.getCampos().stream().anyMatch(cc -> cc.getTipo().isEmpty()))) {
@@ -512,20 +524,9 @@ public class DiagramaLogico extends Diagrama {
             return false;
         }
 
-        String tmp = "/* " + getNomeFormatado() + ": */";
-        List<Tabela> tabelas = getListaDeTabelas();
-        ArrayList<String> ddl = new ArrayList<>();
-        tabelas.forEach(t -> {
-            ddl.add("");
-            t.DDLGenerate(ddl, t.DDL_PEGAR_TABELAS);
-            t.DDLGenerate(ddl, t.DDL_PEGAR_INTEGRIDADE_PK_UN_NOMEADAS);
-        });
-        tabelas.forEach(t -> {
-            t.DDLGenerate(ddl, t.DDL_PEGAR_INTEGRIDADE_FK);
-        });
         MostradorDeCodigo edt = new MostradorDeCodigo((Frame) (Aplicacao.fmPrincipal.getRootPane()).getParent(), true);
         edt.setLocationRelativeTo(Aplicacao.fmPrincipal.getRootPane());
-        edt.setTexto(ddl.stream().map(s -> "\n" + s).reduce(tmp, String::concat));
+        edt.setTexto(ScriptDDL());
         edt.setVisible(true);
         return true;
     }

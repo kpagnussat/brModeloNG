@@ -112,7 +112,7 @@ public class FormCli extends javax.swing.JDialog {
 
         jMenu1.setText(bundle.getString("FormCli.jMenu1.text")); // NOI18N
 
-        menuSair.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Q, java.awt.event.InputEvent.CTRL_MASK));
+        menuSair.setAccelerator(util.Atalhos.tecla(java.awt.event.KeyEvent.VK_Q));
         menuSair.setText(bundle.getString("FormCli.menuSair.text")); // NOI18N
         menuSair.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -125,7 +125,7 @@ public class FormCli extends javax.swing.JDialog {
 
         jMenu2.setText(bundle.getString("FormCli.jMenu2.text")); // NOI18N
 
-        menuColar.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_V, java.awt.event.InputEvent.CTRL_MASK));
+        menuColar.setAccelerator(util.Atalhos.tecla(java.awt.event.KeyEvent.VK_V));
         menuColar.setText(bundle.getString("FormCli.menuColar.text")); // NOI18N
         menuColar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -134,7 +134,7 @@ public class FormCli extends javax.swing.JDialog {
         });
         jMenu2.add(menuColar);
 
-        menuCancelar.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_D, java.awt.event.InputEvent.CTRL_MASK));
+        menuCancelar.setAccelerator(util.Atalhos.tecla(java.awt.event.KeyEvent.VK_D));
         menuCancelar.setText(bundle.getString("FormCli.menuCancelar.text")); // NOI18N
         menuCancelar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {

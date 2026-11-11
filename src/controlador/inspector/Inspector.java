@@ -30,6 +30,10 @@ import javax.swing.KeyStroke;
  */
 public class Inspector extends JScrollPane {
 
+    // Pinned to the value computed before ConfirmeTextoPendente was added: the Inspector is a
+    // window panel, never written to a diagram file, and the serialized-form golden stays as is.
+    private static final long serialVersionUID = -6311791789443975805L;
+
     //<editor-fold defaultstate="collapsed" desc="Base do componente">
     public Inspector() {
         super();
@@ -153,7 +157,38 @@ public class Inspector extends JScrollPane {
             }
         });
 
+        // Leaving the field keeps what was typed, as Enter does (issue #7 of the original).
+        TipoTexto.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusLost(java.awt.event.FocusEvent e) {
+                if (!e.isTemporary()) {
+                    ConfirmeTextoPendente();
+                }
+            }
+        });
+
         TipoTexto.setBorder(null);
+    }
+
+    private transient boolean confirmando = false;
+
+    /**
+     * Applies text typed in the inline field and not yet confirmed with Enter. Called before
+     * anything that would reload the field or change what is selected (leaving the field,
+     * another row, a click on the diagram or the object tree, a menu command), so the typed
+     * value reaches the item it was typed for. No-op when the field is closed or unchanged.
+     */
+    public void ConfirmeTextoPendente() {
+        if (confirmando || selecionado == null || selecionado.getOndeEditar() != TipoTexto
+                || TipoTexto.getParent() != selecionado || !Itens.contains(selecionado)) {
+            return;
+        }
+        confirmando = true;
+        try {
+            EndEdit(true, false);
+        } finally {
+            confirmando = false;
+        }
     }
 
     public void DoResize() {
@@ -277,6 +312,12 @@ public class Inspector extends JScrollPane {
     }
 
     public void PerformSelect(InspectorItemBase aThis) {
+        if (aThis != selecionado) {
+            ConfirmeTextoPendente();
+            if (!Itens.contains(aThis)) {
+                return;
+            }
+        }
         CarregueValor(aThis);
         setSelecionado(aThis);
     }

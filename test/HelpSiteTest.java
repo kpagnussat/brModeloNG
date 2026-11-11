@@ -22,7 +22,7 @@ class HelpSiteTest {
         Map<String, byte[]> a = files(first), b = files(second);
         assertEquals(a.keySet(), b.keySet());
         for (String file : a.keySet()) assertArrayEquals(a.get(file), b.get(file), file);
-        assertEquals(11, a.keySet().stream().filter(f -> f.endsWith(".html")).count());
+        assertEquals(12, a.keySet().stream().filter(f -> f.endsWith(".html")).count());
         HelpSite.validate(first);
         String conceptual = Files.readString(first.resolve("modelo-conceitual.html"));
         assertTrue(conceptual.contains("id=\"entidade-fraca\""));

@@ -785,7 +785,7 @@ public class FramePrincipal extends javax.swing.JFrame implements ISuperControle
 
         fileMenu.setText(bundle.getString("FramePrincipal.fileMenu.text")); // NOI18N
 
-        exitMenuItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Q, java.awt.event.InputEvent.CTRL_DOWN_MASK));
+        exitMenuItem.setAccelerator(util.Atalhos.tecla(java.awt.event.KeyEvent.VK_Q));
         exitMenuItem.setMnemonic('r');
         exitMenuItem.setText(bundle.getString("FramePrincipal.exitMenuItem.text")); // NOI18N
         fileMenu.add(exitMenuItem);
@@ -982,6 +982,7 @@ public class FramePrincipal extends javax.swing.JFrame implements ISuperControle
         if (noTree) {
             return;
         }
+        Manager.ConfirmeEdicaoInspector();
         if (TreeItensDiagrama.getLastSelectedPathComponent() != null) {
             TreeItem ti = ((TreeItem) TreeItensDiagrama.getLastSelectedPathComponent());
             int v = ti.getId();

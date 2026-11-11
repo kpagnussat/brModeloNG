@@ -43,12 +43,12 @@ class JsonEditorTest {
         Path json = output.resolve(name + ".brMj");
         FormatoBrMj.salvar(json, original);
         String before = CanonicalDump.dump(original);
+        Editor editor = frame.getEditor();
+        Diagrama opened = AberturaNoEditor.abrir(editor, json.toFile());
         SwingUtilities.invokeAndWait(() -> {
             try {
-                Editor editor = frame.getEditor();
-                var open = Editor.class.getDeclaredMethod("AbrirDiagramaFromFile", java.io.File.class);
-                open.setAccessible(true); open.invoke(editor, json.toFile());
                 Diagrama loaded = editor.diagramaAtual;
+                assertSame(opened, loaded);
                 assertEquals(json.toString(), loaded.getArquivo());
                 assertEquals(before, CanonicalDump.dump(loaded));
                 assertFalse(loaded.getMudou());

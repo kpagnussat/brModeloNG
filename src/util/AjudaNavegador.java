@@ -1,7 +1,6 @@
 package util;
 
 import java.awt.Component;
-import java.awt.Desktop;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -9,8 +8,6 @@ import java.nio.file.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
-import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 
@@ -51,12 +48,7 @@ public final class AjudaNavegador {
             byte[] content = resource(loader, name);
             if (!sha256(content).equals(hash)) throw new IOException("Recurso de ajuda corrompido: " + name);
             Files.createDirectories(target.getParent());
-            Path temp = Files.createTempFile(target.getParent(), "ajuda-", ".tmp");
-            try {
-                Files.write(temp, content);
-                try { Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
-                catch (AtomicMoveNotSupportedException e) { Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING); }
-            } finally { Files.deleteIfExists(temp); }
+            GravacaoAtomica.gravar(target, saida -> saida.write(content));
         }
         Path index = root.resolve(flatpak ? SINGLE_FILE : "index.html");
         if (!Files.isRegularFile(index)) throw new IOException("Índice de ajuda ausente");
@@ -67,32 +59,16 @@ public final class AjudaNavegador {
     public static URI endereco(Path index, boolean flatpak) {
         return (flatpak ? index.resolveSibling(SINGLE_FILE) : index).toUri();
     }
-    static java.util.List<String> comandoNavegador(URI url, boolean flatpak) {
-        return java.util.List.of("xdg-open", flatpak ? Path.of(url).toString() : url.toASCIIString());
-    }
-    private static void browser(URI url, boolean flatpak) throws IOException, InterruptedException {
-        if (!flatpak && Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-            try { Desktop.getDesktop().browse(url); return; }
-            catch (IOException | UnsupportedOperationException | SecurityException e) { /* Try the platform launcher below. */ }
-        }
-        if (System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("linux")) {
-            Process process = new ProcessBuilder(comandoNavegador(url, flatpak))
-                    .redirectOutput(ProcessBuilder.Redirect.DISCARD).redirectError(ProcessBuilder.Redirect.DISCARD).start();
-            if (!process.waitFor(15, TimeUnit.SECONDS)) { process.destroy(); throw new IOException("O navegador não respondeu"); }
-            if (process.exitValue() == 0) return;
-        }
-        throw new IOException("Não foi possível abrir o navegador");
-    }
     public static void abrir(Component parent) {
         new SwingWorker<Void, Void>() {
             private URI url;
             private Path index;
             @Override protected Void doInBackground() throws Exception {
                 Path state = Pastas.arquivo(Pastas.Tipo.ESTADO, "ajuda").toPath();
-                boolean flatpak = System.getenv("FLATPAK_ID") != null || Files.exists(Path.of("/.flatpak-info"));
+                boolean flatpak = Navegador.flatpak();
                 index = resolverIndice(AjudaNavegador.class.getClassLoader(), state, flatpak);
                 url = endereco(index, flatpak);
-                browser(url, flatpak); return null;
+                Navegador.abrir(url); return null;
             }
             @Override protected void done() {
                 try { get(); }

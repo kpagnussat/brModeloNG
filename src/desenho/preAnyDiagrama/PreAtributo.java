@@ -281,6 +281,18 @@ public class PreAtributo extends FormaNaoRetangularBase {
                 getWidth() - getHeight() - 2,
                 getHeight() + 2);
 
+        if (isAutosize()) {
+            // Autosize fits the name on one line at the screen's scale. Another scale (image
+            // export, printing, other zoom or display scaling) rounds glyph widths differently,
+            // and the last letters wrapped to a second line (issue #25 of the original brModelo).
+            // The name never wraps then: its area extends away from the circle, keeping the anchor.
+            int folga = Math.max(getWidth(), 20);
+            if (getDirecaoLigacao() != Direcao.Left) {
+                rec.x -= folga;
+            }
+            rec.width += folga;
+        }
+
         txtf.LimitarAreaDePintura = true;
         if (getDirecaoLigacao() != Direcao.Left) {
             txtf.setAlinharDireita(true);

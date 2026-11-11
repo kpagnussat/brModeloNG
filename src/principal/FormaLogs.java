@@ -43,7 +43,7 @@ public class FormaLogs extends javax.swing.JDialog {
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
         getRootPane().registerKeyboardAction(e -> {
             setVisible(false);
-        }, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, java.awt.event.InputEvent.CTRL_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        }, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, util.Atalhos.mascara()), JComponent.WHEN_IN_FOCUSED_WINDOW);
         
         final javax.swing.table.DefaultTableModel carga = new javax.swing.table.DefaultTableModel() {
             Class[] types = new Class[]{

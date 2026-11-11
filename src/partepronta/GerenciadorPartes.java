@@ -21,7 +21,6 @@ import desenho.FormaElementar;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -60,6 +59,7 @@ public class GerenciadorPartes implements Serializable{
         return parte;
     }
 
+    /** Thumbnail of the selection; null (a part without picture) above the pixel limit. */
     public byte[] ImagemDaSelecao(Diagrama diagramaAtual) {
         final int borda = 2;
         Point p2 = diagramaAtual.getPontoExtremoSelecionado();
@@ -75,7 +75,13 @@ public class GerenciadorPartes implements Serializable{
         minX = Math.max(minX - borda, 0);
         minY = Math.max(minY - borda, 0);
 
-        BufferedImage cp_img = util.ImageGenerate.geraImagemForPrnSelecao(diagramaAtual, p2.x + borda, p2.y + borda);
+        BufferedImage cp_img;
+        try {
+            cp_img = util.ImageGenerate.geraImagemForPrnSelecao(diagramaAtual, p2.x + borda, p2.y + borda);
+        } catch (util.LimitesEntrada.Excedido e) {
+            util.BrLogger.Logger("ERROR_IMAGE_TOO_LARGE", e.getMessage());
+            return null;
+        }
         return util.TratadorDeImagens.toByteArray(cp_img.getSubimage(minX, minY, p2.x - minX, p2.y - minY));
     }
 
@@ -99,6 +105,7 @@ public class GerenciadorPartes implements Serializable{
     public static GerenciadorPartes LoadData(String arq) {
         GerenciadorPartes res;
         try {
+            util.LimitesEntrada.conferir(new java.io.File(arq), util.LimitesEntrada.BINARIO_BYTES);
             FileInputStream fi = new FileInputStream(arq);
             try (ObjectInput in = new util.LeitorSeguro(fi)) {
                 res = (GerenciadorPartes) in.readObject();
@@ -124,10 +131,11 @@ public class GerenciadorPartes implements Serializable{
     
     public static boolean SaveData(GerenciadorPartes obj, String fileName) {
         try {
-            FileOutputStream fo = new FileOutputStream(fileName);
-            try (ObjectOutput out = new ObjectOutputStream(fo)) {
-                out.writeObject(obj);
-            }
+            util.GravacaoAtomica.gravar(java.nio.file.Path.of(fileName), saida -> {
+                try (ObjectOutput out = new ObjectOutputStream(saida)) {
+                    out.writeObject(obj);
+                }
+            });
             obj.setMudou(false);
             return true;
         } catch (IOException iOException) {

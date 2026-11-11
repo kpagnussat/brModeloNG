@@ -2,6 +2,8 @@
 
 Esta lista reproduz os aceleradores do código e dos menus do NG. Alguns diferem dos padrões de outros programas. Quando o foco estiver num campo de texto, as teclas podem editar o texto; volte ao desenho ou use o menu para executar um comando do diagrama.
 
+No macOS, onde esta página diz **Ctrl**, use **Command (⌘)**: os menus já mostram ⌘, e segurar Command ao clicar faz o que Ctrl faz nos outros sistemas. A exceção é **Ctrl+Tab**, que continua com Ctrl, porque Command+Tab troca de programa no macOS.
+
 ## Arquivo e ajuda
 
 - **Ctrl+Shift+C**: novo Conceitual.

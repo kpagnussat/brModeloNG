@@ -4,7 +4,6 @@ import controlador.apoios.GuardaPadraoBrM;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
@@ -91,11 +90,12 @@ final class AutoSalvamentoEditor {
 
     static boolean AutoSalveToFile(Editor editor, ArrayList<byte[]> snapshot, String file) {
         try {
-            FileOutputStream fo = new FileOutputStream(file);
-            try (ObjectOutput out = new ObjectOutputStream(fo)) {
-                out.writeObject(snapshot);
-                return true;
-            }
+            util.GravacaoAtomica.gravar(new File(file).toPath(), saida -> {
+                try (ObjectOutput out = new ObjectOutputStream(saida)) {
+                    out.writeObject(snapshot);
+                }
+            });
+            return true;
         } catch (IOException iOException) {
             util.BrLogger.Logger("ERROR_DIAGRAMA_AUTOSAVE_WIRTE", iOException.getMessage());
             return false;
@@ -193,6 +193,7 @@ final class AutoSalvamentoEditor {
         }
 
         try {
+            util.LimitesEntrada.conferir(f, util.LimitesEntrada.BINARIO_BYTES);
             FileInputStream fi = new FileInputStream(f);
             try (ObjectInput in = new util.LeitorSeguro(fi)) {
                 ArrayList<byte[]> salvado = (ArrayList<byte[]>) in.readObject();

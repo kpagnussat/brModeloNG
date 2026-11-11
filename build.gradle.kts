@@ -153,6 +153,10 @@ tasks.test {
     systemProperty("serializedForm.classes", sourceSets.main.get().output.classesDirs.asPath)
     providers.gradleProperty("snapGridOutput").orNull?.let { systemProperty("brmodelo.snap.output", it) }
     if (providers.gradleProperty("seletorManual").isPresent) systemProperty("brmodelo.seletor.manual", "true")
+    // CI sets -PexigirIsolamento where bubblewrap works: the real sandbox tests must run, not skip.
+    if (providers.gradleProperty("exigirIsolamento").isPresent) systemProperty("brmodelo.exigirIsolamento", "true")
+    // Tests run these scripts from the source tree.
+    inputs.dir("packaging/launcher")
     useJUnitPlatform {
         if (!guiTests) excludeTags("gui")
     }
@@ -237,7 +241,7 @@ registerDevTask("seletorDemo", "SeletorDemo", "Open all five file dialogs withou
 }
 
 // Package versions are independent of version fields serialized inside diagrams.
-version = providers.gradleProperty("version").getOrElse("1.0.0")
+version = providers.gradleProperty("version").getOrElse("1.0.1")
 apply(from = "packaging/packaging.gradle.kts")
 
 // Help ships inside the jar, hence also inside every installer/portable package.

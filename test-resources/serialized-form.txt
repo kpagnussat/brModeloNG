@@ -10736,6 +10736,20 @@ class util.JFontChooser$DialogOKAction
     enabled Z
     changeSupport Ljavax/swing/event/SwingPropertyChangeSupport;
   java.lang.Object non-serializable
+class util.LimitesEntrada$Excedido
+  util.LimitesEntrada$Excedido uid=-8803532989312109100
+  java.io.IOException uid=7818375828146090155
+  java.lang.Exception uid=-3387516993124229948
+  java.lang.Throwable uid=-3042686055658047285
+    cause Ljava/lang/Throwable;
+    detailMessage Ljava/lang/String;
+    stackTrace [Ljava/lang/StackTraceElement;
+    suppressedExceptions Ljava/util/List;
+  java.lang.Object non-serializable
+class util.Navegador$Via
+  util.Navegador$Via uid=0
+  java.lang.Enum uid=0
+  java.lang.Object non-serializable
 class util.PainelSelecaoCor
   util.PainelSelecaoCor uid=1124478972421994619
     itens Ljava/util/ArrayList;
@@ -10894,4 +10908,8 @@ class util.TextLineNumber
     peerFont Ljava/awt/Font;
     popups Ljava/util/Vector;
     prefSize Ljava/awt/Dimension;
+  java.lang.Object non-serializable
+class util.TrabalhadorImportacao$Nivel
+  util.TrabalhadorImportacao$Nivel uid=0
+  java.lang.Enum uid=0
   java.lang.Object non-serializable

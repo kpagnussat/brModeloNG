@@ -106,7 +106,7 @@ public class ImpressorPreview extends BaseControlador {
     }
 
     private void DrawPagina(Graphics2D Canvas) {
-        if (pgatual > 0) {
+        if (pgatual > 0 && prn.imgs != null) {
             Canvas.drawImage(prn.imgs[pgatual - 1], l, t, w, h, null); //melhor
         }
     }

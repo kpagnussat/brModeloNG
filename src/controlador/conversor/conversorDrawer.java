@@ -73,7 +73,7 @@ public class conversorDrawer extends BaseControlador {
     }
 
     public void setObjAtivo(FormaElementar obj, BufferedImage dig_img) {
-        if (obj == null) {
+        if (obj == null || dig_img == null) {
             toPaint = null;
         } else {
             Rectangle r = obj.getBounds();

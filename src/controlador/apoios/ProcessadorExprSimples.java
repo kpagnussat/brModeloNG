@@ -194,7 +194,7 @@ public class ProcessadorExprSimples {
                         res = res.remainder(v1);
                         break;
                     case "^":
-                        res = res.pow(v1.intValueExact());
+                        res = potencia(res, v1.intValueExact());
                         break;
                 }
             } catch (ArithmeticException ex) {
@@ -203,6 +203,23 @@ public class ProcessadorExprSimples {
             }
         }
         return res.toString();
+    }
+
+    // Results are drawing coordinates (int), so larger powers are errors. The size is
+    // estimated before computing: BigDecimal.pow takes exponents up to 999,999,999 and
+    // would spend minutes on 9^100000000.
+    static final int MAIOR_EXPOENTE = 64;
+    static final int MAIORES_DIGITOS = 18;
+
+    private static BigDecimal potencia(BigDecimal base, int expoente) {
+        if (expoente > MAIOR_EXPOENTE) {
+            throw new ArithmeticException("exponent " + expoente + " > " + MAIOR_EXPOENTE);
+        }
+        double digitos = expoente * Math.log10(Math.abs(base.doubleValue()));
+        if (digitos > MAIORES_DIGITOS) {
+            throw new ArithmeticException("power above 10^" + MAIORES_DIGITOS);
+        }
+        return base.pow(expoente);
     }
 
     //reescrever nos processadores mais sofisticados

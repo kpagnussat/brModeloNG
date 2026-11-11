@@ -206,7 +206,11 @@ public class conversorConceitualParaLogico {
         ArrayList<String> infos = Opcoes.Textos;
         String pk = Editor.fromConfiguracao.getValor("Controler.interface.mensagem.msgcov.pk.sufix");
         String fk = Editor.fromConfiguracao.getValor("Controler.interface.mensagem.msgcov.fk.sufix");
-        for (Atributo a : lst) {
+        // Multivalued attributes come last, so the table's key fields already exist when
+        // a multivalued attribute becomes a table that must receive them.
+        List<Atributo> ordem = new ArrayList<>(lst);
+        ordem.sort(java.util.Comparator.comparing(a -> isMultivaloradoComTabela(a)));
+        for (Atributo a : ordem) {
             boolean tmpcardMaxUtil = a.getCardMaxima() > 1 || a.getCardMaxima() == -1;
             if (a.isAtributoComposto() || a.isOpcional() || (a.isMultivalorado() && tmpcardMaxUtil)) {
                 int tmp = (a.isOpcional() ? 1 : 0) + (a.isAtributoComposto() ? 1 : 0) + (a.isMultivalorado() ? 1 : 0);
@@ -254,6 +258,23 @@ public class conversorConceitualParaLogico {
                         String ax = removerCaracteresEspeciais(a.getTexto());
                         ntb.setTexto(ax);
                         Links.Add(a, xres);
+                        if (isMultivaloradoComTabela(a) && tb.getCampos().stream().anyMatch(Campo::isKey)) {
+                            // Issue #13 of the original brModelo: one row per value, keyed by
+                            // the owner's key plus the value, and the owner's key is the FK.
+                            ImportaCampoChaveKFK(tb, ntb, "");
+                            setOrigemLigacao(
+                                    LinkTable(tb, ntb, 0, (a.getCardMinima() == 0 ? 3 : 2)),
+                                    ntb);
+                            // A limited maximum repeats the attribute for the column option; here each value is a row.
+                            final Tabela T = ntb;
+                            attrs.stream().distinct().forEach(at -> {
+                                ImportaComoCampo(T, at);
+                                T.getCampos().get(T.getCampos().size() - 1).setKey(true);
+                            });
+                            continue;
+                        }
+                        // Composite or optional attribute, or an owner without a key yet:
+                        // the new table gets its own key and the owner references it.
                         setOrigemLigacao(
                                 LinkTable(tb, ntb, (a.isOpcional() ? 0 : (a.isMultivalorado() ? 0 : 1)), (Limitado ? 3 : 1)),
                                 tb);
@@ -278,6 +299,10 @@ public class conversorConceitualParaLogico {
             }
         }
         return res;
+    }
+
+    private static boolean isMultivaloradoComTabela(Atributo a) {
+        return a.isMultivalorado() && (a.getCardMaxima() > 1 || a.getCardMaxima() == -1);
     }
 
     private void ImportaComoCampo(Tabela tb, Atributo a) {
@@ -382,7 +407,12 @@ public class conversorConceitualParaLogico {
             fm.setLocation(Opcoes.LastPosi);
         }
         if (dig_img == null) {
-            dig_img = util.ImageGenerate.geraImagem(origem);
+            try {
+                dig_img = util.ImageGenerate.geraImagem(origem);
+            } catch (util.LimitesEntrada.Excedido e) {
+                // The questions are still asked, without the picture of each object.
+                util.BrLogger.Logger("ERROR_IMAGE_TOO_LARGE", e.getMessage());
+            }
         }
         fm.Inicializar(origem, destino, Opcoes, dig_img);
         fm.setVisible(true);

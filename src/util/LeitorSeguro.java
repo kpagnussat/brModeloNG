@@ -3,6 +3,7 @@ package util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InvalidClassException;
+import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
 import java.util.Arrays;
@@ -15,7 +16,8 @@ import java.util.Set;
  * Diagrams are exchanged between users, so every descriptor (including array components)
  * is checked before class resolution and object construction. Only brModelo's packages
  * and the JDK value types stored by the model are accepted; dynamic proxies are never
- * part of a diagram. This keeps the original file format and works on Java 8.
+ * part of a diagram. Sizes declared in the stream are bounded too (see the constructor).
+ * This keeps the original file format.
  */
 public class LeitorSeguro extends ObjectInputStream {
 
@@ -42,8 +44,19 @@ public class LeitorSeguro extends ObjectInputStream {
                     "java.awt.geom.Ellipse2D$Float", "java.awt.geom.Rectangle2D$Float",
                     "java.awt.geom.RoundRectangle2D$Float")));
 
+    /** Declared sizes up to this many elements are always accepted. */
+    static final int MINIMO_ELEMENTOS = 1 << 20;
+
     public LeitorSeguro(InputStream entrada) throws IOException {
         super(entrada);
+        // The reader allocates an array, and the table of an ArrayList, HashMap or Hashtable,
+        // at the size the stream declares, before reading the elements. Every element takes
+        // at least one byte of input, so a size beyond what is left to read can only make a
+        // small file claim a large allocation. The floor covers sources that report no size
+        // and the spare capacity of hash tables.
+        long limite = Math.max(entrada.available(), MINIMO_ELEMENTOS);
+        setObjectInputFilter(info -> info.arrayLength() > limite
+                ? ObjectInputFilter.Status.REJECTED : ObjectInputFilter.Status.UNDECIDED);
     }
 
     /** Shared name-only policy for binary and JSON diagrams; call before class resolution. */

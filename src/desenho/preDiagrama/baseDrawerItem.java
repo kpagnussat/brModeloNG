@@ -27,7 +27,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import javax.imageio.ImageIO;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -299,22 +298,30 @@ public class baseDrawerItem implements Serializable, IObjetoPintavel {
         }
         Rectangle rec = new Rectangle(pts[0], pts[1], pts[2], pts[3]);
         rec.grow(-2, -2);
-        if (imgres == null) {
+        // The smooth scaled copy is cached up to the pixel limit; a larger area (sizes come
+        // from expressions in the file) scales the picture while drawing instead.
+        boolean emCache = (long) rec.width * rec.height <= util.LimitesEntrada.PIXELS_IMAGEM;
+        if (imgres == null && emCache) {
             imgres = img.getScaledInstance(rec.width, rec.height, Image.SCALE_SMOOTH);
         }
-        g.drawImage(imgres, rec.x, rec.y, null);
+        g.drawImage(emCache ? imgres : img, rec.x, rec.y, rec.width, rec.height, null);
     }
 
     public BufferedImage getImagem() {
-        if (imagem == null && byteImage != null) {
+        if (imagem == null && byteImage != null && !imagemRecusada) {
             imagem = fromByteArray(byteImage);
+            // Bytes that do not decode (or exceed the pixel limit) are kept for saving but
+            // not retried on every repaint, which would log the same error each time.
+            imagemRecusada = imagem == null;
         }
         return imagem;
     }
+    private transient boolean imagemRecusada = false;
 
     public void setImagem(BufferedImage imagem) {
         byteImage = toByteArray(imagem);
         this.imagem = imagem;
+        imagemRecusada = false;
     }
 
     protected byte[] byteImage = null;
@@ -333,7 +340,7 @@ public class baseDrawerItem implements Serializable, IObjetoPintavel {
         byteImage = null;
         try {
             File fimg = new File(arq);
-            setImagem(ImageIO.read(fimg));
+            setImagem(util.TratadorDeImagens.ler(fimg, fimg.getName()));
             Proporcao();
             dono.InvalidateArea();
         } catch (IOException iOException) {

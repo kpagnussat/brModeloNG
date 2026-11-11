@@ -1,0 +1,8 @@
+      <Custom Action="BrFirewallRestoreApp" After="InstallFiles">Installed</Custom>
+      <Custom Action="BrFirewallRestoreJavaw" After="BrFirewallRestoreApp">Installed</Custom>
+      <Custom Action="BrFirewallRestoreJava" After="BrFirewallRestoreJavaw">Installed</Custom>
+      <Custom Action="BrFirewallRollback" After="BrFirewallRestoreJava"/>
+      <Custom Action="BrFirewallRemove" After="BrFirewallRollback"/>
+      <Custom Action="BrFirewallApp" After="BrFirewallRemove">NOT REMOVE~="ALL"</Custom>
+      <Custom Action="BrFirewallJavaw" After="BrFirewallApp">NOT REMOVE~="ALL"</Custom>
+      <Custom Action="BrFirewallJava" After="BrFirewallJavaw">NOT REMOVE~="ALL"</Custom>

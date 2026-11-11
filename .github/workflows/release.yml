@@ -13,6 +13,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  audit:
+    name: Dependency audit (OSV)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check libraries against the OSV database
+        run: bash packaging/audit-dependencies.sh
+
   packages:
     name: Native packages (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -60,10 +72,18 @@ jobs:
           wix_bin=$(dirname "$(find '/c/Program Files (x86)' -maxdepth 3 -name candle.exe -print -quit)")
           test -f "$wix_bin/light.exe"
           cygpath -w "$wix_bin" >> "$GITHUB_PATH"
+      # The sandbox tests must run here, not skip: Ubuntu runners restrict unprivileged user
+      # namespaces through AppArmor, which bubblewrap needs.
+      - name: Enable bubblewrap sandboxes
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+          bwrap --unshare-all --ro-bind / / true
       - name: Build, test and package Linux
         if: runner.os == 'Linux'
         run: |
-          xvfb-run -a ./gradlew --no-daemon --dependency-verification strict -Pversion="$PACKAGE_VERSION" -PreleaseDate="$RELEASE_DATE" build -Pgui jpackageImage jpackageDeb jpackageRpm
+          xvfb-run -a ./gradlew --no-daemon --dependency-verification strict -Pversion="$PACKAGE_VERSION" -PreleaseDate="$RELEASE_DATE" build -Pgui -PexigirIsolamento jpackageImage jpackageDeb jpackageRpm
           appstreamcli validate --no-net build/packaging/input/linux/*.metainfo.xml
           desktop-file-validate packaging/linux/*.desktop
           xvfb-run -a bash packaging/smoke-test.sh
@@ -96,6 +116,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-26.08
+      # flatpak-builder runs each build step inside bubblewrap, which needs to create
+      # namespaces and mounts; an unprivileged container cannot. The container only
+      # builds from this checkout and holds no release credentials (contents: read).
       options: --privileged
     timeout-minutes: 60
     defaults:
@@ -146,10 +169,13 @@ jobs:
           if-no-files-found: error
 
   release:
-    needs: [packages, flatpak]
+    needs: [audit, packages, flatpak]
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # Signing the build provenance attestation (Sigstore, through the workflow's OIDC token).
+      id-token: write
+      attestations: write
     steps:
       - name: Download all package assets
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -157,6 +183,15 @@ jobs:
           pattern: packages-*
           merge-multiple: true
           path: release-assets
+      # Checksums let anyone confirm a download; the attestation ties each file to this
+      # workflow run and commit (verify with: gh attestation verify FILE -R OWNER/REPO).
+      - name: Write SHA256SUMS
+        working-directory: release-assets
+        run: sha256sum -- * > ../SHA256SUMS && mv ../SHA256SUMS . && cat SHA256SUMS
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: release-assets/SHA256SUMS
       - name: Attach artifacts to a draft GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -171,6 +206,6 @@ jobs:
             fi
           else
             gh release create "$RELEASE_TAG" --verify-tag --draft \
-              --title "brModelo NG $RELEASE_TAG" --notes 'Portable jar, portable Linux (tar.gz) and Windows (zip) builds, DEB, RPM, Windows MSI, macOS DMG and Flatpak bundle. Packages are unsigned.'
+              --title "brModelo NG $RELEASE_TAG" --notes 'Portable jar, portable Linux (tar.gz) and Windows (zip) builds, DEB, RPM, Windows MSI, macOS DMG and Flatpak bundle. Packages are unsigned; SHA256SUMS lists their checksums and each file has a build provenance attestation (gh attestation verify FILE -R kpagnussat/brModeloNG).'
           fi
           gh release upload "$RELEASE_TAG" release-assets/* --clobber

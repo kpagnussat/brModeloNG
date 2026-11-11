@@ -45,7 +45,8 @@ public class MostradorDeCodigo extends javax.swing.JDialog implements ClipboardO
         super(parent, modal);
         initComponents();
         util.AcabamentoDialogos.aplicar(this);
-        lblHtml = new JLabel();
+        // The viewer renders the program's own HTML; the generated SQL inside it is escaped.
+        lblHtml = util.InterfaceSemHtml.permitir(new JLabel());
         // Code reads from the top; a JLabel centers vertically when the viewport is taller.
         lblHtml.setVerticalAlignment(SwingConstants.TOP);
         vlZoom = lblHtml.getFont().getSize();
@@ -58,11 +59,11 @@ public class MostradorDeCodigo extends javax.swing.JDialog implements ClipboardO
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
         getRootPane().registerKeyboardAction(e -> {
             setVisible(false);
-        }, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, java.awt.event.InputEvent.CTRL_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        }, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, util.Atalhos.mascara()), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         getRootPane().registerKeyboardAction(e -> {
             btnCopyActionPerformed(null);
-        }, KeyStroke.getKeyStroke(KeyEvent.VK_C, java.awt.event.InputEvent.CTRL_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        }, KeyStroke.getKeyStroke(KeyEvent.VK_C, util.Atalhos.mascara()), JComponent.WHEN_IN_FOCUSED_WINDOW);
         setTitle(Editor.fromConfiguracao.getValor("Controler.interface.Titulo.MostradorDeCodigo"));
         util.LayoutDialogos.texto(this, jToolBar1, scrPrincipal, jPanel2);
     }
@@ -267,9 +268,11 @@ public class MostradorDeCodigo extends javax.swing.JDialog implements ClipboardO
         }
         
         try {
-            PrintWriter out = new PrintWriter(arq.getAbsoluteFile());
-            out.print(buffer);
-            out.close();
+            util.GravacaoAtomica.gravar(arq.toPath(), saida -> {
+                try (PrintWriter out = new PrintWriter(saida)) {
+                    out.print(buffer);
+                }
+            });
         } catch (IOException iOException) {
             util.BrLogger.Logger("ERROR_DIAGRAMA_SAVE_ANY", iOException.getMessage());
         }
@@ -328,7 +331,8 @@ public class MostradorDeCodigo extends javax.swing.JDialog implements ClipboardO
         final String fimB = "</font>";
         
         for (String str : subs) {
-            str = " " + str + " ";
+            // Names in the DDL come from the diagram: escape them before adding highlight tags.
+            str = " " + util.DicasInterface.escape(str) + " ";
             String tmp = str.toUpperCase();
             for (String rw : dbModel.getDataTypes()) {
                 int p = tmp.indexOf(" " + rw + " ");

@@ -136,11 +136,7 @@ public class DiagramaAtividade extends Diagrama {
         } else {
             cliq1 = null;
             cliq2 = null;
-            if (!master.isControlDown()) {
-                setComando(null);
-            } else {
-                setComando(com);
-            }
+            ManterOuSoltarComando(com);
             resu.BringToFront();
         }
         if (resu != null && (resu.isVisible())) {

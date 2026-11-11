@@ -13,7 +13,8 @@ import java.util.stream.Stream;
 public final class SerializedForm {
     private SerializedForm() {}
 
-    static String dump() throws Exception {
+    /** Names of all compiled main classes, from the directories the build passes in. */
+    static TreeSet<String> classNames() throws Exception {
         TreeSet<String> names = new TreeSet<>();
         String roots = System.getProperty("serializedForm.classes");
         if (roots == null || roots.isBlank()) throw new IllegalStateException("Missing main class directories");
@@ -26,8 +27,12 @@ public final class SerializedForm {
             }
         }
         if (names.isEmpty()) throw new IllegalStateException("No compiled main classes found");
+        return names;
+    }
+
+    static String dump() throws Exception {
         StringBuilder out = new StringBuilder();
-        for (String name : names) {
+        for (String name : classNames()) {
             Class<?> type = Class.forName(name, false, SerializedForm.class.getClassLoader());
             if (!Serializable.class.isAssignableFrom(type)) continue;
             out.append("class ").append(name).append('\n');

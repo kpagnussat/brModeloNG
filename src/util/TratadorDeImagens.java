@@ -19,7 +19,10 @@ import java.awt.image.RGBImageFilter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Iterator;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import javax.swing.ImageIcon;
 
 /**
@@ -92,11 +95,31 @@ public class TratadorDeImagens {
         return null;
     }
     
+    /**
+     * Decodes an image like ImageIO.read, after checking the size its header declares
+     * against LimitesEntrada.PIXELS_IMAGEM: a few bytes can claim a picture of gigabytes.
+     * Returns null when no reader knows the format.
+     */
+    public static BufferedImage ler(Object origem, String nome) throws IOException {
+        try (ImageInputStream entrada = ImageIO.createImageInputStream(origem)) {
+            if (entrada == null) throw new IOException("Can't read input: " + nome);
+            Iterator<ImageReader> leitores = ImageIO.getImageReaders(entrada);
+            if (!leitores.hasNext()) return null;
+            ImageReader leitor = leitores.next();
+            try {
+                leitor.setInput(entrada, true, true);
+                LimitesEntrada.conferirPixels(nome, leitor.getWidth(0), leitor.getHeight(0));
+                return leitor.read(0, leitor.getDefaultReadParam());
+            } finally {
+                leitor.dispose();
+            }
+        }
+    }
+
     public static BufferedImage fromByteArray(byte[] imagebytes) {
         try {
             if (imagebytes != null && (imagebytes.length > 0)) {
-                BufferedImage im = ImageIO.read(new ByteArrayInputStream(imagebytes));
-                return im;
+                return ler(new ByteArrayInputStream(imagebytes), "imagem");
             }
         } catch (IOException e) {
             util.BrLogger.Logger("ERROR_IMG_FROMBYTES", e.getMessage());

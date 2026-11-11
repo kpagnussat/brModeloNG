@@ -86,13 +86,13 @@ public class Editor extends BaseControlador implements KeyListener {
         _fromControler = controler;
         setFocusTraversalKeysEnabled(false);
         // <editor-fold defaultstate="collapsed" desc="Teclas">
-        KeyStroke key_crtl = KeyStroke.getKeyStroke(KeyEvent.VK_CONTROL, InputEvent.CTRL_DOWN_MASK);
-        KeyStroke key_crtl_up = KeyStroke.getKeyStroke(KeyEvent.VK_CONTROL, 0, true);
+        KeyStroke key_crtl = KeyStroke.getKeyStroke(util.Atalhos.tecla(), util.Atalhos.mascara());
+        KeyStroke key_crtl_up = KeyStroke.getKeyStroke(util.Atalhos.tecla(), 0, true);
 
-        KeyStroke key_crtlEshift = KeyStroke.getKeyStroke(KeyEvent.VK_CONTROL, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK, false);
-        KeyStroke key_shiftEcrtl = KeyStroke.getKeyStroke(KeyEvent.VK_SHIFT, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK, false);
-        KeyStroke key_crtlEshift_up = KeyStroke.getKeyStroke(KeyEvent.VK_CONTROL, InputEvent.SHIFT_DOWN_MASK, true);
-        KeyStroke key_shiftEcrtl_up = KeyStroke.getKeyStroke(KeyEvent.VK_SHIFT, InputEvent.CTRL_DOWN_MASK, true);
+        KeyStroke key_crtlEshift = KeyStroke.getKeyStroke(util.Atalhos.tecla(), util.Atalhos.mascara() | InputEvent.SHIFT_DOWN_MASK, false);
+        KeyStroke key_shiftEcrtl = KeyStroke.getKeyStroke(KeyEvent.VK_SHIFT, util.Atalhos.mascara() | InputEvent.SHIFT_DOWN_MASK, false);
+        KeyStroke key_crtlEshift_up = KeyStroke.getKeyStroke(util.Atalhos.tecla(), InputEvent.SHIFT_DOWN_MASK, true);
+        KeyStroke key_shiftEcrtl_up = KeyStroke.getKeyStroke(KeyEvent.VK_SHIFT, util.Atalhos.mascara(), true);
 
         KeyStroke key_shift = KeyStroke.getKeyStroke(KeyEvent.VK_SHIFT, InputEvent.SHIFT_DOWN_MASK);
         KeyStroke key_shift_up = KeyStroke.getKeyStroke(KeyEvent.VK_SHIFT, 0, true);
@@ -757,7 +757,18 @@ public class Editor extends BaseControlador implements KeyListener {
         return controler;
     }
 
+    /** Applies a name or value still open in an Inspector field; see Inspector.ConfirmeTextoPendente. */
+    public void ConfirmeEdicaoInspector() {
+        if (InspectorEditor != null) {
+            InspectorEditor.ConfirmeTextoPendente();
+        }
+        if (editorConfig != null) {
+            editorConfig.ConfirmeTextoPendente();
+        }
+    }
+
     public void DoActionExtender(ActionEvent ev) {
+        ConfirmeEdicaoInspector();
         if (diagramaAtual != null) {
             if (ev == null || ev.getActionCommand() == null || ev.getActionCommand().isEmpty()) {
                 return;
@@ -918,15 +929,35 @@ public class Editor extends BaseControlador implements KeyListener {
         }
     }
 
-    private void AbrirDiagramaFromFile(File arq) {
-        ArquivosEditor.AbrirDiagramaFromFile(this, arq);
+    private java.util.concurrent.CompletableFuture<Diagrama> AbrirDiagramaFromFile(File arq) {
+        return ArquivosEditor.AbrirDiagramaFromFile(this, arq);
     }
 
     void ProcessePosOpen(Diagrama res, boolean isXml) {
         ArquivosEditor.ProcessePosOpen(this, res, isXml);
     }
 
+    /**
+     * A palette tool chosen with a double click stays active after each object it creates,
+     * until Escape, the arrow or another tool (issue #5 of the original brModelo). Holding
+     * Ctrl while clicking on the sheet keeps the tool for that click, as before.
+     */
+    private transient boolean ferramentaFixa = false;
+
+    public boolean isFerramentaFixa() {
+        return ferramentaFixa;
+    }
+
+    /** Called by a double click on a palette tool, after its two single clicks chose it. */
+    public void FixarFerramenta() {
+        if (diagramaAtual != null && diagramaAtual.getComando() != null) {
+            ferramentaFixa = true;
+            setTextoDica(null, fromConfiguracao.getValor("Controler.interface.FerramentaFixa.dica"));
+        }
+    }
+
     public void DoAction(ActionEvent ev) {
+        ferramentaFixa = false;
         if (diagramaAtual != null) {
             diagramaAtual.DoAction(ev);
             boolean eacao = false;
@@ -996,6 +1027,7 @@ public class Editor extends BaseControlador implements KeyListener {
     }
 
     public void NoAction() {
+        ferramentaFixa = false;
         controler.BtnNothing.setSelected(true);
     }
     // </editor-fold>

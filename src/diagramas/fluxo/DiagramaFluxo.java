@@ -154,11 +154,7 @@ public class DiagramaFluxo extends Diagrama {
         } else {
             cliq1 = null;
             cliq2 = null;
-            if (!master.isControlDown()) {
-                setComando(null);
-            } else {
-                setComando(com);
-            }
+            ManterOuSoltarComando(com);
             resu.BringToFront();
         }
         return resu;

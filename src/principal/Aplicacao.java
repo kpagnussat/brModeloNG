@@ -52,10 +52,13 @@ public class Aplicacao {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+        util.RedeDesligada.instalar(); // before any library creates an http URL
         util.Renderizacao.configurar(); // before anything starts AWT
+        util.Navegador.registrarIsolamento(); // logging starts AWT
         // Command-line theme > saved preference > desktop; decorations share a
         // native fallback on every OS until the WM interaction audit can be completed.
         initLookAndFeel();
+        util.InterfaceSemHtml.instalar(); // before any window shows diagram text
 
         java.awt.EventQueue.invokeLater(new Runnable() {
             @Override
@@ -63,6 +66,8 @@ public class Aplicacao {
                 fmPrincipal = new FramePrincipal();
                 fmPrincipal.setVisible(true);
                 controlador.ArquivosInicializacao.abrir(fmPrincipal.getEditor(), args);
+                // Queued after the opening starts, which reads in the background meanwhile.
+                java.awt.EventQueue.invokeLater(() -> util.SessaoX11.avisarUmaVez(fmPrincipal));
             }
         });
     }

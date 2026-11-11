@@ -21,6 +21,14 @@ See [LICENSE-lucide.txt](src/imagens/svg/LICENSE-lucide.txt). Diagram symbols in
 that directory are drawn by the in-repository generator `dev/icones/gerar_svg.py`.
 The full-color application icon is `packaging/brModelo.svg`.
 
+The interface typeface `src/fontes/AdwaitaSans-Regular.ttf` is Adwaita Sans, GNOME's
+interface font (derived from Inter), from adwaita-fonts 50.0, under the SIL Open Font
+License 1.1: see [LICENSE-adwaita-fonts.txt](src/fontes/LICENSE-adwaita-fonts.txt). It was
+taken from `https://download.gnome.org/sources/adwaita-fonts/50/adwaita-fonts-50.0.tar.xz`
+(SHA-256 `4c927fbfeec1c503801ba510c2c94e0054c82c522cf7ba0d3be5d4d41fcf5c86`, as published
+beside it); the file's SHA-256 is `8381c33b9a44f066f2b99dba3d416a2342891e28c956a35dfd8d16ee2987e6d4`,
+which `FonteInterfaceTest` checks.
+
 The optional `.brMj` format adds no dependency. `util.Json` is a small in-repository
 syntax parser/writer with strict JSON validation, exact decimal parsing and tests;
 `util.FormatoBrMj` owns the explicit allowlisted graph mapping. No external JSON

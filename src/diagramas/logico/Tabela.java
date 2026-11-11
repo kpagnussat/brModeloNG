@@ -676,7 +676,7 @@ public class Tabela extends baseDrawerFromForma {
         final String utxt = "UNIQUE";
         final String em_branco = "    ";
         if (ddl_pegar == DDL_PEGAR_TUDO || ddl_pegar == DDL_PEGAR_TABELAS) {
-            String tmp = createTable + getPrefixo() + getTexto() + " (";
+            String tmp = createTable + NomeSql.nome(getPrefixo() + getTexto()) + " (";
             texto.add(tmp);
 
             int total_campos = getCampos().size() - 1;
@@ -693,7 +693,7 @@ public class Tabela extends baseDrawerFromForma {
             int contador_campos = 0;
             for (Campo c : getCampos()) {
                 boolean eh_ultimo_campo = contador_campos == total_campos;
-                tmp = c.getTexto() + (c.getTipo().isEmpty() ? "" : " " + c.getTipo()) + (!c.getComplemento().isEmpty() ? " " + c.getComplemento() : "");
+                tmp = NomeSql.nome(c.getTexto()) + (c.getTipo().isEmpty() ? "" : " " + c.getTipo()) + (!c.getComplemento().isEmpty() ? " " + c.getComplemento() : "");
                 if (c.isKey() && chaveSimples) {
                     tmp += " " + pktxt;
                 }
@@ -1406,7 +1406,7 @@ public class Tabela extends baseDrawerFromForma {
     }
 
     public String getSepadorSql() {
-        return ((DiagramaLogico) getMaster()).getSeparatorSQL();
+        return NomeSql.separador(((DiagramaLogico) getMaster()).getSeparatorSQL());
     }
 
     //Versão 3.2!

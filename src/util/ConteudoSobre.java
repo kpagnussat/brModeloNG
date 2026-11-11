@@ -1,7 +1,6 @@
 package util;
 
 import java.awt.*;
-import java.io.IOException;
 import java.net.URI;
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
@@ -35,8 +34,10 @@ public final class ConteudoSobre {
         page.addHyperlinkListener(event -> {
             if (event.getEventType() != HyperlinkEvent.EventType.ACTIVATED) return;
             try {
-                if (Desktop.isDesktopSupported()) Desktop.getDesktop().browse(URI.create(event.getDescription()));
-            } catch (IOException | IllegalArgumentException e) {
+                URI link = URI.create(event.getDescription());
+                // The page is the program's own; still, only web links leave it for the browser.
+                if ("https".equalsIgnoreCase(link.getScheme())) Navegador.abrirDepois(link);
+            } catch (IllegalArgumentException e) {
                 BrLogger.Logger("ERROR_BROWSER_OPEN", e.getMessage());
             }
         });

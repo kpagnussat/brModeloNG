@@ -14,7 +14,8 @@ Esta ajuda acompanha a instalação e funciona sem internet. No navegador, use a
 6. [Imprimir, exportar e reutilizar](imprimir-exportar.md)
 7. [Atalhos de teclado](atalhos.md)
 8. [Novidades do brModelo NG](novidades.md)
-9. [Problemas comuns](problemas-comuns.md)
+9. [Abrir arquivos de outras pessoas](arquivos-recebidos.md)
+10. [Problemas comuns](problemas-comuns.md)
 
 ## Créditos
 

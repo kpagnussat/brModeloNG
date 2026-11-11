@@ -5,15 +5,10 @@
  */
 package principal;
 
-import java.awt.Desktop;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.JComponent;
 import javax.swing.KeyStroke;
 import javax.swing.event.MouseInputListener;
@@ -38,7 +33,7 @@ public class FormAtualizar extends javax.swing.JFrame {
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
         getRootPane().registerKeyboardAction(e -> {
             setVisible(false);
-        }, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, java.awt.event.InputEvent.CTRL_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        }, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, util.Atalhos.mascara()), JComponent.WHEN_IN_FOCUSED_WINDOW);
     }
 
     /**
@@ -151,6 +146,7 @@ public class FormAtualizar extends javax.swing.JFrame {
         jLabel2.setText(java.util.ResourceBundle.getBundle("principal/Formularios_pt_BR").getString("Atualizador.lblNovaVersao"));
         lblNovaVersao.setText(java.util.ResourceBundle.getBundle("principal/Formularios_pt_BR").getString("Atualizador.releases"));
         u = util.AtualizacoesNG.RELEASES;
+        util.InterfaceSemHtml.permitir(lblLink);
         lblLink.setText("<html><a href='" + u + "'>" + java.util.ResourceBundle.getBundle("principal/Formularios_pt_BR").getString("FramePrincipal.menuVerAtualizacao.text") + "</a></html>");
         lblLink.setToolTipText(util.DicasInterface.texto("releases"));
         setDefaultCloseOperation(javax.swing.WindowConstants.HIDE_ON_CLOSE);
@@ -158,13 +154,7 @@ public class FormAtualizar extends javax.swing.JFrame {
         lblLink.addMouseListener(new MouseInputListener() {
             @Override
             public void mouseClicked(MouseEvent me) {
-                if (Desktop.isDesktopSupported() && !u.isEmpty()) {
-                    try {
-                        Desktop.getDesktop().browse(new URI(u));
-                    } catch (IOException | URISyntaxException ex) {
-                        Logger.getLogger(FormAtualizar.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
+                if (!u.isEmpty()) util.Navegador.abrirDepois(java.net.URI.create(u));
             }
 
             @Override

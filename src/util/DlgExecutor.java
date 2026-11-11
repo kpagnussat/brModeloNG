@@ -39,7 +39,7 @@ public class DlgExecutor extends javax.swing.JDialog {
         getRootPane().registerKeyboardAction(e -> {
             setResultado(JOptionPane.OK_OPTION);
             setVisible(false);
-        }, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, java.awt.event.InputEvent.CTRL_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        }, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, util.Atalhos.mascara()), JComponent.WHEN_IN_FOCUSED_WINDOW);
     }
 
     /**

@@ -6,6 +6,145 @@ Esta seção reúne as mudanças do fork em relação ao brModelo oficial 3.3.2.
 O histórico anterior pertence ao
 [projeto original](https://github.com/chcandido/brModelo/commits/master/).
 
+## [1.0.1] - 2026-11-10
+
+Versão de segurança. O formato `.brM3` não muda: os arquivos continuam abrindo
+no brModelo oficial, e vice-versa.
+
+### Security
+
+- **Leitura fora da janela:** `.brM3` e `.brMj` abertos pelo menu, pelos
+  recentes, pela linha de comando ou pelo gerenciador de arquivos são
+  decodificados num processo Java separado e sem tela (768 MB de memória,
+  30 segundos de prazo), que devolve o diagrama em JSON, validado de novo pela
+  janela; a interface deixou de desserializar arquivos recebidos. Um arquivo
+  feito para esgotar a memória ou o processador travava o programa; agora
+  encerra só esse processo e é recusado. No Linux, o processo roda no
+  bubblewrap, sem rede, pasta pessoal, tela ou barramento da sessão; no Flatpak,
+  com `flatpak-spawn --sandbox` e ambiente vazio, encerrado pelo próprio
+  programa no prazo. Sem isolamento disponível, roda como processo comum e o
+  motivo fica no log.
+- **Abertura sem travar:** a janela continua respondendo enquanto o arquivo é
+  lido. Se a leitura passa de meio segundo, aparece **Abrindo diagrama**, com
+  **Cancelar**, que encerra a leitura e devolve a janela na hora. Arquivos
+  passados pela linha de comando continuam abrindo na ordem.
+- **Limites de entrada:** diagramas binários, partes e recuperação até 64 MiB,
+  JSON até 128 MiB, XML e texto colado até 16 MiB, conferidos antes de ler; o
+  leitor recusa vetores e coleções declarados maiores que a própria entrada.
+  Imagens até 64 megapixels, conferidas pelo cabeçalho; setas desenhadas sem uma
+  imagem do tamanho da forma; exportar, copiar e imprimir recusam diagramas
+  acima do teto; potências nas expressões limitadas antes do cálculo.
+- **XML:** lido sem DTD e sem entidades externas; antes, um XML preparado podia
+  ler arquivos do computador e enviá-los pela rede.
+- **Rede:** textos do diagrama nunca são interpretados como HTML, que fazia o
+  Swing buscar imagens na internet ao abrir um arquivo; o processo recusa
+  endereços `http`, `https` e `ftp`; o visualizador de SQL escapa os nomes; os
+  links do Sobre aceitam só `https`.
+- **Segunda camada de rede nos pacotes:** `.deb`, `.rpm` e `.tar.gz` iniciam o
+  programa no bubblewrap, numa rede só com a interface local, e abrem links e a
+  ajuda pelo portal OpenURI ou pelo gerenciador de serviços do usuário, para o
+  navegador ter rede; sem bubblewrap, abrem normalmente com registro no log. O
+  `.msi` acrescenta regras de saída bloqueada no Firewall do Windows para o
+  programa e o Java incluído, removidas ao desinstalar e restauradas se um
+  reparo ou uma desinstalação falhar.
+- **Flatpak sem acesso a pastas:** a permissão para a pasta Documentos saiu;
+  cada arquivo chega pelo seletor ou pelo gerenciador de arquivos, via portal de
+  documentos, e salvar sobre ele continua atômico.
+- **Gravação atômica:** diagramas, recuperação, partes, configurações, SQL,
+  texto e imagens exportadas são gravados num temporário na mesma pasta,
+  sincronizados e só então trocados pelo original; uma falha no meio, como disco
+  cheio, mantém o arquivo anterior.
+- **SQL gerado:** nomes que poderiam carregar comandos saem entre aspas (nomes
+  comuns não mudam), `ON DELETE`/`ON UPDATE` e o separador aceitam só valores do
+  SQL, e `*/` não fecha mais o comentário do cabeçalho.
+- **JSON:** listas e mapas não são mais aceitos como chave de mapa.
+- **Sessão X11:** ao iniciar numa sessão X11, o programa avisa uma vez que nela
+  qualquer janela pode enviar teclas a outras, inclusive a um terminal, e
+  recomenda a sessão Wayland para abrir arquivos de outras pessoas. É a lacuna
+  que segue aberta: fechá-la depende de um Java que desenhe direto no Wayland.
+- **Distribuição:** dependências verificadas na base OSV a cada mudança, toda
+  semana e antes de cada release; releases com `SHA256SUMS` e atestado de
+  procedência para cada arquivo (`gh attestation verify`).
+
+### Added
+
+- **Ferramenta fixa na paleta** (issue #5 do brModelo original): para criar
+  vários objetos seguidos, como os atributos de uma entidade, era preciso
+  escolher a ferramenta de novo a cada um. Agora um clique duplo na ferramenta
+  a mantém ativa até **Esc**, um clique na seta ou a escolha de outra
+  ferramenta. O atalho antigo, segurar **Ctrl** ao clicar na folha, continua
+  valendo e passou a constar na ajuda.
+- **Tipo UUID** (issue #11 do brModelo original): a lista de tipos de campo do
+  modelo lógico, em **Editar campos** e **Editar tipos**, passou a sugerir
+  `UUID`, também nos diagramas salvos antes dele. O arquivo continua abrindo no
+  brModelo oficial.
+
+### Changed
+
+- **Flatpak:** recentes guardados em `~/Documentos` pela versão 1.0.0 deixam de
+  abrir pela lista; abra cada um uma vez por **Arquivo → Abrir**, e ele volta a
+  ficar nos recentes.
+- **Abertura:** a leitura num processo separado acrescenta cerca de 0,2 a 0,4 s
+  a um diagrama típico e alguns segundos aos muito grandes (2.000 itens
+  interligados: 2,4 s, contra 0,16 s).
+- **Fonte da interface:** Adwaita Sans incluída (SIL OFL 1.1) e usada no
+  Windows e no macOS. O Linux segue a fonte da área de trabalho e usa a cópia
+  incluída quando o Java não a encontra, como no Flatpak no Silverblue e no
+  Kinoite, onde a interface aparecia numa fonte fina de reserva.
+- **Pacotes Linux:** `.deb` e `.rpm` dependem de `bubblewrap`; `brmodelo-ng` é
+  um script que inicia `brmodelo-ng-app`, e `BRMODELO_ISOLAMENTO=desligado`
+  dispensa a rede isolada.
+- **Desenvolvimento:** a CI gera o `.msi` a cada mudança e roda os testes de
+  isolamento sem pulá-los; o projeto tem uma política de segurança
+  ([SECURITY.md](SECURITY.md)) e o README, uma seção que descreve cada camada.
+- **Orientação para quem troca diagramas:** o README e a ajuda (página
+  **Abrir arquivos de outras pessoas**) explicam a professores e alunos o que o
+  NG faz ao abrir um arquivo recebido e os cuidados que nenhuma proteção
+  substitui: conferir a extensão, não abrir no oficial um arquivo recusado e
+  ler o SQL gerado antes de executá-lo.
+
+### Fixed
+
+- Ajuda: o tópico "A ajuda não abriu" citava um servidor local do Flatpak que
+  não existe mais.
+- **Conversão para o lógico, atributo multivalorado** (issue #13 do brModelo
+  original): a tabela criada para o atributo recebia uma chave própria, e a
+  entidade passava a apontar para ela, invertendo a ligação. Agora a tabela do
+  atributo recebe a chave da entidade como chave estrangeira e tem como chave
+  primária essa chave mais o valor, uma linha por valor. Um máximo pequeno,
+  como (1,3), não repete mais a coluna na tabela.
+- **Especialização exclusiva ou não exclusiva** (issue #33 do brModelo
+  original): o Inspector só mostrava a indicação, e as ferramentas da paleta
+  criavam sempre um triângulo único, ou seja, exclusiva. Agora **Esp.
+  exclusiva** e **Esp. não exclusiva** podem ser marcadas: o programa junta as
+  entidades especializadas num triângulo ou desenha um triângulo para cada uma,
+  mantendo total ou parcial, e um **Desfazer** volta ao desenho anterior. A
+  ajuda descrevia a ferramenta **Nova Especialização (duas entidades)** como
+  não exclusiva; ela cria um triângulo com duas entidades.
+- **Nome digitado no Inspector** (issue #7 do brModelo original): o texto só
+  valia com Enter, e clicar no desenho, em outra linha ou salvar descartava o
+  que tinha sido digitado. Agora ele vale também ao sair do campo, ao clicar no
+  desenho ou na lista de objetos e antes de qualquer comando do menu, como
+  **Salvar**. Esc continua desfazendo a digitação.
+- **Erro de imagem no log** (issue #31 do brModelo original): ao clicar num
+  espaço vazio do diagrama, o retângulo de seleção aparecia na lista de
+  objetos, e o log registrava `ERROR_GET_RESOURCE_IMG` por falta de ícone.
+  Agora ele fica fora da lista. As restrições do modelo lógico (chave
+  primária, chave estrangeira e única) também ganharam o ícone na lista, que
+  nunca aparecia e gerava o mesmo erro.
+- **Nome de atributo quebrado na imagem exportada** (issue #25 do brModelo
+  original): com tamanho automático, o atributo media o nome na escala da tela
+  (zoom, ou telas em 125% e 150%), e na exportação, impressão ou outro zoom as
+  últimas letras podiam cair para uma segunda linha. Agora o nome de um
+  atributo com tamanho automático nunca quebra linha. A largura salva no
+  arquivo não muda.
+- **Atalhos no macOS** (issue #27 do brModelo original): todos os atalhos
+  pediam Ctrl, onde o macOS usa Command. Agora os menus, os diálogos e o
+  desenho usam **Command (⌘)** no macOS: segurar Command ao clicar soma à
+  seleção e mantém a ferramenta, e Command com a roda do mouse muda o zoom.
+  Ctrl+Tab continua com Ctrl, porque Command+Tab troca de programa. Linux e
+  Windows não mudam.
+
 ## [1.0.0] - 2026-10-09
 
 Primeira versão do **brModelo NG**.
@@ -125,4 +264,5 @@ Primeira versão do **brModelo NG**.
 - Build Ant/NetBeans e jars de dependências versionados; o projeto usa o Gradle
   Wrapper e Maven Central, preservando os arquivos `.form` para edição visual.
 
+[1.0.1]: https://github.com/kpagnussat/brModeloNG/releases/tag/v1.0.1
 [1.0.0]: https://github.com/kpagnussat/brModeloNG/releases/tag/v1.0.0

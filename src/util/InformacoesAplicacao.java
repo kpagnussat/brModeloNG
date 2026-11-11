@@ -13,6 +13,6 @@ public final class InformacoesAplicacao {
         } catch (IOException e) {
             BrLogger.Logger("ERROR_VERSION_LOAD", e.getMessage());
         }
-        return properties.getProperty("version", "1.0.0");
+        return properties.getProperty("version", "1.0.1");
     }
 }

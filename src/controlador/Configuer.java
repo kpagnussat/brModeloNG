@@ -7,7 +7,6 @@ package controlador;
 import java.awt.Image;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -110,19 +109,16 @@ public class Configuer {
     public void SaveCfg() {
         String tmp = util.Pastas.arquivo(util.Pastas.Tipo.CONFIG, "config.chc").getPath();
         try {
-            try (FileOutputStream cfgFile = new FileOutputStream(tmp)) {
-                Properties prop = new Properties();
-
-                for (String v : configuracao.keySet()) {
-                    if (!((v.startsWith("Inspector."))
-                            || (v.startsWith("diagrama."))
-                            || (v.startsWith("Linha.cmd."))
-                            || (v.startsWith("Controler.")))) { //não coloco os do arq. de cfg padrão - tradução.
-                        prop.setProperty(v, getValor(v));
-                    }
+            Properties prop = new Properties();
+            for (String v : configuracao.keySet()) {
+                if (!((v.startsWith("Inspector."))
+                        || (v.startsWith("diagrama."))
+                        || (v.startsWith("Linha.cmd."))
+                        || (v.startsWith("Controler.")))) { //não coloco os do arq. de cfg padrão - tradução.
+                    prop.setProperty(v, getValor(v));
                 }
-                prop.store(cfgFile, "Config");
             }
+            util.GravacaoAtomica.gravar(java.nio.file.Path.of(tmp), saida -> prop.store(saida, "Config"));
         } catch (Exception e) {
             util.BrLogger.Logger("ERROR_SAVE_CFGFILE", e.getMessage());
         }

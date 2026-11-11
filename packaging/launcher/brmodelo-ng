@@ -1,0 +1,26 @@
+#!/bin/sh
+# brModelo NG launcher for the Linux packages (deb, rpm, tar.gz).
+#
+# The program needs no network, so it runs in a network namespace of its own when
+# bubblewrap can create one: only loopback, nothing reaches the outside. The rest of the
+# system stays as it is (files, display, session bus, drives mounted later). Links and the
+# help open in the browser through the desktop (util.Navegador), outside this namespace.
+# Where bubblewrap is missing or unprivileged namespaces are disabled, the program runs
+# as before and its log says so. BRMODELO_ISOLAMENTO=desligado skips the namespace.
+here=$(dirname "$(readlink -f "$0")")
+app="$here/brmodelo-ng-app"
+# The probe runs the very options of the real start, so only the command differs.
+sandbox="--unshare-net --new-session --die-with-parent --dev-bind / /"
+if [ "${BRMODELO_ISOLAMENTO:-}" = desligado ]; then
+    motivo="disabled by the user"
+elif ! command -v bwrap >/dev/null 2>&1; then
+    motivo="bwrap is not installed"
+elif motivo=$(bwrap $sandbox true 2>&1); then
+    BRMODELO_ISOLAMENTO=rede
+    export BRMODELO_ISOLAMENTO
+    exec bwrap $sandbox "$app" "$@"
+fi
+BRMODELO_ISOLAMENTO="indisponivel: $(printf '%s' "$motivo" | head -n 1)"
+export BRMODELO_ISOLAMENTO
+echo "brmodelo-ng: running without network isolation ($BRMODELO_ISOLAMENTO)" >&2
+exec "$app" "$@"

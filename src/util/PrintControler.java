@@ -34,6 +34,9 @@ public class PrintControler implements Printable {
     int idx = 0;
 
     public void print() {
+        if (imgs == null) {
+            return;
+        }
         getPrintJob().setPrintable(this, getPage());
 
         if (Atributos.isEmpty()) {
@@ -54,7 +57,7 @@ public class PrintControler implements Printable {
 
     @Override
     public int print(Graphics g, PageFormat pageFormat, int pageIndex) {
-        if (pageIndex < imgs.length) {
+        if (imgs != null && pageIndex < imgs.length) {
             Graphics2D g2d = (Graphics2D) g;
             g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
 

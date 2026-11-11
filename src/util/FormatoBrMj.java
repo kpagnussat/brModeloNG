@@ -11,7 +11,6 @@ import java.io.Serializable;
 import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.List;
@@ -44,10 +43,13 @@ public final class FormatoBrMj {
 
     public static void salvar(Path path, Diagrama diagram) throws IOException {
         // Encode completely before touching the destination.
-        Files.write(path, escrever(diagram));
+        byte[] json = escrever(diagram);
+        GravacaoAtomica.gravar(path, saida -> saida.write(json));
     }
 
-    public static Documento ler(Path path) throws IOException { return ler(Files.readAllBytes(path)); }
+    public static Documento ler(Path path) throws IOException {
+        return ler(LimitesEntrada.ler(path.toFile(), LimitesEntrada.JSON_BYTES));
+    }
 
     public static Documento ler(byte[] bytes) throws IOException {
         Map<String, Object> doc = documento(bytes);
@@ -353,7 +355,11 @@ public final class FormatoBrMj {
                 for (Object p : list(r.get("entradas"))) {
                     Map<String, Object> pair = map(p); keys(pair, "chave", "valor");
                     Object key = pair.get("chave");
-                    valueType(key); valueType(pair.get("valor"));
+                    // Lists and maps hash their whole content, recursively, when used as a key;
+                    // every other allowed key hashes in constant time. Diagrams only use text keys.
+                    Class<?> keyType = valueType(key); valueType(pair.get("valor"));
+                    if (keyType != null && (Collection.class.isAssignableFrom(keyType) || Map.class.isAssignableFrom(keyType)))
+                        throw new IOException("Map key cannot be a collection: " + keyType.getName());
                     if (!seen.add(Json.escrever(key))) throw new IOException("Duplicate map key");
                     if (type == Hashtable.class && (key == null || pair.get("valor") == null)) throw new IOException("Hashtable cannot contain null");
                 }

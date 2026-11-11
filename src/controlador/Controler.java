@@ -224,6 +224,14 @@ public class Controler {
         btn.setPreferredSize(btnDim);
         btn.setDoubleBuffered(true);
         btn.setRolloverEnabled(false);
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2 && javax.swing.SwingUtilities.isLeftMouseButton(e)) {
+                    editor.FixarFerramenta();
+                }
+            }
+        });
         return btn;
     }
 
@@ -290,7 +298,7 @@ public class Controler {
                     ac.IDX = -1;
                     ac.normal = false;
                     String str = "Controler.comandos." + ca.command.substring(3).toLowerCase() + ".tecla";
-                    KeyStroke k = KeyStroke.getKeyStroke(Editor.fromConfiguracao.getValor(str));
+                    KeyStroke k = util.Atalhos.tecla(Editor.fromConfiguracao.getValor(str));
                     ac.putValue(Acao.ACCELERATOR_KEY, k);
 
                     char a = Editor.fromConfiguracao.getValor("Controler.comandos." + ca.command.substring(3).toLowerCase() + ".mtecla").charAt(0);
@@ -319,7 +327,7 @@ public class Controler {
                                 ac.normal = false;
 
                                 str = "Controler.comandos." + tp.name().substring(2).toLowerCase() + ".tecla";
-                                k = KeyStroke.getKeyStroke(Editor.fromConfiguracao.getValor(str));
+                                k = util.Atalhos.tecla(Editor.fromConfiguracao.getValor(str));
                                 ac.putValue(Acao.ACCELERATOR_KEY, k);
 
                                 a = Editor.fromConfiguracao.getValor("Controler.comandos." + tp.name().substring(2).toLowerCase() + ".mtecla").charAt(0);
@@ -345,7 +353,7 @@ public class Controler {
                 ac.IDX = -1;
                 ac.normal = false;
                 String str = "Controler.comandos." + ca.command.substring(3).toLowerCase() + ".tecla";
-                KeyStroke k = KeyStroke.getKeyStroke(Editor.fromConfiguracao.getValor(str));
+                KeyStroke k = util.Atalhos.tecla(Editor.fromConfiguracao.getValor(str));
                 ac.putValue(Acao.ACCELERATOR_KEY, k);
 
                 char a = Editor.fromConfiguracao.getValor("Controler.comandos." + ca.command.substring(3).toLowerCase() + ".mtecla").charAt(0);
@@ -357,7 +365,7 @@ public class Controler {
         JMenuItem quit = menuArquivo.getItem(0);
         menuArquivo.remove(quit);
         javax.swing.Action ac = quit.getAction();
-        KeyStroke k = KeyStroke.getKeyStroke(Editor.fromConfiguracao.getValor("Controler.interface.menu.quit.tecla"));
+        KeyStroke k = util.Atalhos.tecla(Editor.fromConfiguracao.getValor("Controler.interface.menu.quit.tecla"));
         ac.putValue(Acao.ACCELERATOR_KEY, k);
         ac.putValue(Acao.SHORT_DESCRIPTION, Editor.fromConfiguracao.getValor("Controler.interface.menu.quit.texto"));
         ac.putValue(Acao.NAME, Editor.fromConfiguracao.getValor("Controler.interface.menu.quit.texto"));

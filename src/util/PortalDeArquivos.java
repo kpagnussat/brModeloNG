@@ -15,6 +15,7 @@ import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.Struct;
 import org.freedesktop.dbus.annotations.DBusInterfaceName;
 import org.freedesktop.dbus.annotations.Position;
+import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.interfaces.DBus;
@@ -129,42 +130,58 @@ public final class PortalDeArquivos implements SeletorDeArquivos.Backend {
             Properties properties = bus.getRemoteObject(DESTINO, CAMINHO, Properties.class);
             UInt32 version = properties.Get(INTERFACE, "version");
             if (version == null || version.longValue() < 1) return SeletorDeArquivos.Resposta.erro();
-            DBus daemon = bus.getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
-            String owner = daemon.GetNameOwner(DESTINO);
             FileChooser chooser = bus.getRemoteObject(DESTINO, CAMINHO, FileChooser.class);
-            String token = "brmodelo_" + UUID.randomUUID().toString().replace("-", "");
-            String expected = caminhoRequest(bus.getUniqueName(), token);
-            CompletableFuture<Request.Response> response = new CompletableFuture<>();
-            var rule = DBusMatchRuleBuilder.create().withType(Request.Response.class)
-                    .withSender(owner).withPath(expected).build();
-            // Install the match BEFORE OpenFile/SaveFile: cancellation can race the method reply.
-            try (var subscription = bus.addSigHandler(rule, (Request.Response signal) -> response.complete(signal))) {
-                DBusPath handle = null;
-                boolean completed = false;
-                try {
-                    // AWT exposes neither an X11 XID nor a Wayland exported handle through a public API.
-                    // An empty parent is permitted by the portal; Swing supplies application modality.
-                    handle = pedido.salvar() ? chooser.SaveFile("", pedido.titulo(), opcoes(pedido, token))
-                            : chooser.OpenFile("", pedido.titulo(), opcoes(pedido, token));
-                    if (!expected.equals(handle.getPath())) return SeletorDeArquivos.Resposta.erro();
-                    for (;;) {
-                        try {
-                            Request.Response signal = response.get(1, TimeUnit.SECONDS);
-                            completed = true;
-                            return resposta(signal.response.intValue(), signal.results, pedido);
-                        } catch (TimeoutException e) {
-                            // Do not time out a user browsing files; detect bus/service loss instead.
-                            if (!bus.isConnected() || !owner.equals(daemon.GetNameOwner(DESTINO))) {
-                                return SeletorDeArquivos.Resposta.erro();
-                            }
-                        }
+            String token = token();
+            // AWT exposes neither an X11 XID nor a Wayland exported handle through a public API.
+            // An empty parent is permitted by the portal; Swing supplies application modality.
+            Request.Response signal = requisitar(bus, token, () -> pedido.salvar()
+                    ? chooser.SaveFile("", pedido.titulo(), opcoes(pedido, token))
+                    : chooser.OpenFile("", pedido.titulo(), opcoes(pedido, token)));
+            return signal == null ? SeletorDeArquivos.Resposta.erro()
+                    : resposta(signal.response.intValue(), signal.results, pedido);
+        }
+    }
+
+    static String token() {
+        return "brmodelo_" + UUID.randomUUID().toString().replace("-", "");
+    }
+
+    /**
+     * Calls a portal method that answers through an org.freedesktop.portal.Request and waits
+     * for its Response, keeping the connection open meanwhile (closing it cancels the request).
+     * {@code chamada} must pass {@code token} as its handle_token. Returns null when the
+     * portal returned another request path or the bus or portal went away. Never call on the EDT.
+     */
+    static Request.Response requisitar(DBusConnection bus, String token, java.util.function.Supplier<DBusPath> chamada)
+            throws Exception {
+        DBus daemon = bus.getRemoteObject("org.freedesktop.DBus", "/org/freedesktop/DBus", DBus.class);
+        String owner = daemon.GetNameOwner(DESTINO);
+        String expected = caminhoRequest(bus.getUniqueName(), token);
+        CompletableFuture<Request.Response> response = new CompletableFuture<>();
+        var rule = DBusMatchRuleBuilder.create().withType(Request.Response.class)
+                .withSender(owner).withPath(expected).build();
+        // Install the match BEFORE the call: cancellation can race the method reply.
+        try (var subscription = bus.addSigHandler(rule, (Request.Response signal) -> response.complete(signal))) {
+            DBusPath handle = null;
+            boolean completed = false;
+            try {
+                handle = chamada.get();
+                if (!expected.equals(handle.getPath())) return null;
+                for (;;) {
+                    try {
+                        Request.Response signal = response.get(1, TimeUnit.SECONDS);
+                        completed = true;
+                        return signal;
+                    } catch (TimeoutException e) {
+                        // Do not time out a user who is still choosing; detect bus/service loss instead.
+                        if (!bus.isConnected() || !owner.equals(daemon.GetNameOwner(DESTINO))) return null;
                     }
-                } finally {
-                    // Closing the request dismisses an abandoned chooser, including local wait cancellation.
-                    if (!completed) {
-                        try { bus.getRemoteObject(owner, handle == null ? expected : handle.getPath(), Request.class).Close(); }
-                        catch (RuntimeException | DBusException e) { /* The portal may already have removed the request. */ }
-                    }
+                }
+            } finally {
+                // Closing the request dismisses an abandoned dialog, including local wait cancellation.
+                if (!completed) {
+                    try { bus.getRemoteObject(owner, handle == null ? expected : handle.getPath(), Request.class).Close(); }
+                    catch (RuntimeException | DBusException e) { /* The portal may already have removed the request. */ }
                 }
             }
         }

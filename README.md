@@ -20,7 +20,7 @@ O brModelo NG nasceu desse convite.*
 [![macOS](https://img.shields.io/badge/macOS-.dmg-000000?logo=apple&logoColor=white)](https://github.com/kpagnussat/brModeloNG/releases/latest)
 [![Java 21](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)](BUILDING.md)
 
-**[Baixar](#instalação)** · **[Novidades](#no-dia-a-dia)** · **[Ajuda](#ajuda-completa-no-f1)** · **[Compatibilidade](#compatibilidade-com-o-brmodelo-oficial)** · **[Por dentro](#por-dentro-do-código)** · **[Compilar e contribuir](#código-fonte-e-contribuições)** · **[English](#english)**
+**[Baixar](#instalação)** · **[Novidades](#no-dia-a-dia)** · **[Ajuda](#ajuda-completa-no-f1)** · **[Compatibilidade](#compatibilidade-com-o-brmodelo-oficial)** · **[Segurança](#segurança)** · **[Por dentro](#por-dentro-do-código)** · **[Compilar e contribuir](#código-fonte-e-contribuições)** · **[English](#english)**
 
 </div>
 
@@ -62,6 +62,11 @@ O NG é um fork **não oficial**, mantido por
 a licença do projeto original. Inclui correções de segurança, concorrência e
 desempenho, testes automatizados e pacotes para Linux, Windows e macOS. Foi
 desenvolvido com a assistência de ferramentas de inteligência artificial.
+
+Das issues do [brModelo original](https://github.com/chcandido/brModelo/issues),
+o NG resolve as abertas [#3](https://github.com/chcandido/brModelo/issues/3), [#4](https://github.com/chcandido/brModelo/issues/4), [#7](https://github.com/chcandido/brModelo/issues/7), [#11](https://github.com/chcandido/brModelo/issues/11), [#12](https://github.com/chcandido/brModelo/issues/12), [#13](https://github.com/chcandido/brModelo/issues/13), [#16](https://github.com/chcandido/brModelo/issues/16), [#17](https://github.com/chcandido/brModelo/issues/17), [#21](https://github.com/chcandido/brModelo/issues/21), [#25](https://github.com/chcandido/brModelo/issues/25), [#27](https://github.com/chcandido/brModelo/issues/27), [#28](https://github.com/chcandido/brModelo/issues/28), [#31](https://github.com/chcandido/brModelo/issues/31) e [#33](https://github.com/chcandido/brModelo/issues/33), e atende aos pedidos das já fechadas
+[#5](https://github.com/chcandido/brModelo/issues/5) e [#30](https://github.com/chcandido/brModelo/issues/30). Ficam de fora a [#8](https://github.com/chcandido/brModelo/issues/8), que pede converter arquivos da
+versão 2, e a [#18](https://github.com/chcandido/brModelo/issues/18), sobre um arquivo específico que não abre.
 
 ## No dia a dia
 
@@ -308,6 +313,180 @@ Relatos de outros sistemas são bem-vindos nas
 [issues](https://github.com/kpagnussat/brModeloNG/issues) e nas
 [discussões](https://github.com/kpagnussat/brModeloNG/discussions).
 
+## Segurança
+
+### Trocar diagramas em aula
+
+Professores abrem os trabalhos de turmas inteiras; alunos trocam diagramas
+entre si e recebem modelos do professor. Quando você abre um diagrama recebido,
+o NG:
+
+- lê o arquivo num processo separado, que aceita só o que um diagrama do
+  brModelo contém e recusa o resto, em vez de executá-lo; no Linux, esse
+  processo não tem rede nem acesso às suas pastas;
+- não trava nem perde o que está aberto se o arquivo for grande demais,
+  danificado ou feito para isso: a leitura tem prazo e um botão **Cancelar**;
+- não avisa ninguém pela internet que o arquivo foi aberto, porque não faz
+  nenhuma chamada de rede;
+- gera SQL em que um nome de tabela não esconde comandos;
+- continua salvando `.brM3` que abre no brModelo oficial.
+
+> [!IMPORTANT]
+> **Nenhuma proteção substitui o cuidado de quem abre o arquivo.** O NG protege
+> só o que ele mesmo abre, e só contra os problemas que conhecemos. Alguns
+> hábitos valem mais do que qualquer camada:
+>
+> - **Confira se é mesmo um diagrama.** Diagramas terminam em `.brM3`, `.brMj`
+>   ou `.xml`. `trabalho.brM3.exe`, `.jar`, `.bat`, `.cmd`, `.lnk`, `.scr`, `.sh`
+>   ou um `.zip` com um programa dentro não são diagramas: abri-los executa um
+>   programa, e nenhum editor protege disso. No Windows, ative **Extensões de
+>   nomes de arquivos** no Explorador de Arquivos para ver o nome inteiro.
+> - **Abra pelo NG**, por **Arquivo → Abrir** ou pelo gerenciador de arquivos.
+>   No Linux, prefira o Flatpak; no Windows, o `.msi`, se quiser que o
+>   instalador aplique automaticamente as regras do firewall que bloqueiam a
+>   rede do programa.
+> - **Não abra no brModelo oficial um arquivo que o NG recusou.** O oficial não
+>   tem nenhuma destas proteções. Peça a quem enviou que salve o diagrama de
+>   novo.
+> - **Receba pelos canais da disciplina**, como o ambiente virtual ou o e-mail
+>   da instituição, e desconfie de arquivo inesperado, mesmo de um nome
+>   conhecido: contas também são invadidas.
+> - **Leia o SQL gerado de um diagrama recebido antes de executá-lo**, num banco
+>   de testes, nunca num banco com dados que importam.
+> - **Salve o que está aberto** antes de abrir arquivos de outras pessoas e
+>   mantenha o NG e o sistema atualizados.
+> - No Linux, prefira a **sessão Wayland** (veja o aviso no fim desta seção).
+
+### Problemas encontrados e o que o NG faz
+
+Em aula, professores abrem dezenas de diagramas enviados por alunos, muitas
+vezes no mesmo computador em que guardam notas, provas, o e-mail da instituição
+e senhas salvas no navegador. Um diagrama é um arquivo que o programa
+interpreta, e o brModelo oficial confia no que lê. Revisões de segurança do
+código herdado do oficial 3.3.2 encontraram os problemas abaixo. Para cada um,
+estão o risco e o que o NG faz. O primeiro já estava corrigido no NG 1.0.0; os
+demais, na 1.0.1.
+
+**1. Executar um programa ao abrir um `.brM3`.** O `.brM3` é serialização
+Java, e o oficial o lê com um `ObjectInputStream` comum, uma falha conhecida
+como *desserialização insegura*. Um arquivo preparado pode rodar um programa
+com as permissões de quem o abre, no instante da abertura e sem nenhum aviso: ler
+ou apagar provas, notas e trabalhos de outros alunos, copiar as sessões e
+senhas salvas no navegador, instalar algo que continue rodando depois ou
+criptografar a pasta pessoal para pedir resgate. O diagrama pode até aparecer
+normalmente na tela.
+
+- O NG lê por uma lista de classes permitidas: só os pacotes do brModelo e os
+  tipos de valor do JDK que o modelo usa. O resto é recusado antes de a classe
+  ser carregada ou de qualquer objeto ser construído, e proxies dinâmicos são
+  sempre rejeitados. A regra vale para diagramas, modelos reutilizáveis,
+  recuperação e área de transferência; o JSON (`.brMj`) segue a mesma lista e
+  ainda valida campos, tipos e referências.
+- Além disso, o `.brM3` ou `.brMj` aberto pelo menu, pelos recentes, pela linha
+  de comando ou pelo gerenciador de arquivos é lido fora da janela, num
+  processo Java separado e sem tela, que devolve o diagrama em JSON, conferido
+  de novo pela janela. No Linux, esse processo roda no
+  [bubblewrap](https://github.com/containers/bubblewrap), sem rede, pasta
+  pessoal, tela ou barramento da sessão; no Flatpak, num sandbox próprio; no
+  Windows e no macOS, é um processo comum. Se o isolamento não puder iniciar,
+  a leitura roda num processo comum e o motivo fica no log. A recuperação, o
+  desfazer e as partes prontas, gravados pelo próprio programa, e os arquivos
+  XML continuam sendo lidos na janela, com as mesmas regras e limites.
+
+**2. Travar o programa ou esgotar a memória.** Um `.brM3` de 1,6 KB com
+coleções aninhadas deixava o programa calculando sem fim, e vetores ou imagens
+que se declaram gigantes, como um PNG de 1×1 pixel que diz ter
+20.000×20.000, esgotavam a memória. Em aula, isso congela o programa e faz
+perder o trabalho ainda não salvo.
+
+- O processo de leitura tem 768 MB de memória e 30 segundos de prazo: um
+  arquivo assim encerra só esse processo e é recusado. A janela continua
+  respondendo; se a leitura passa de meio segundo, aparece **Abrindo
+  diagrama**, com **Cancelar**.
+- Os tamanhos são conferidos antes de ler: diagramas binários, partes e
+  recuperação até 64 MiB; JSON até 128 MiB; XML e texto colado até 16 MiB;
+  vetores e coleções nunca maiores que o próprio arquivo. Imagens até
+  64 megapixels, conferidas pelo cabeçalho; o mesmo teto vale para exportar,
+  copiar e imprimir o diagrama. As potências nas expressões têm limite antes
+  do cálculo. Acima disso, a operação é recusada e a mensagem fica no log.
+
+**3. Ler arquivos do computador e enviá-los pela internet.** O XML era lido com
+entidades externas habilitadas (*XXE*). Um `.xml` preparado fazia o programa
+incluir o conteúdo de um arquivo do computador e mandá-lo a um servidor, só
+por ser aberto; isso foi reproduzido antes da correção.
+
+- O NG lê XML sem DTD e sem entidades externas.
+
+**4. Avisar a terceiros que o arquivo foi aberto.** O Swing interpreta HTML em
+rótulos e botões. Um texto do diagrama com uma imagem da internet fazia o
+programa buscá-la ao abrir o diagrama, revelando o endereço IP, a hora e o
+fato de que o arquivo foi aberto, e abrindo um canal para outros ataques. Num
+arquivo de teste, foram 9 requisições ao abrir. O oficial também verifica
+atualizações no site por HTTP, sem criptografia.
+
+- No NG, os textos do diagrama nunca são interpretados como HTML, o processo
+  recusa endereços `http`, `https` e `ftp`, e o programa não faz nenhuma
+  chamada de rede: o mesmo arquivo de teste faz 0 requisições. O menu **Ajuda
+  → Releases do brModelo NG** e a ajuda abrem no navegador.
+- Os pacotes acrescentam uma segunda camada, caso algo escape das anteriores:
+
+  | Pacote | Segunda camada de rede |
+  | --- | --- |
+  | Flatpak | Sem permissão de rede nem de pastas: cada arquivo chega pelo seletor ou pelo gerenciador de arquivos. |
+  | `.deb`, `.rpm` e `.tar.gz` | O lançador inicia o programa no bubblewrap, numa rede só com a interface local. Sem o bubblewrap, ou onde o sistema restringe esse recurso, o programa abre normalmente e registra o motivo no log. |
+  | `.msi` | Regras do Firewall do Windows bloqueiam a saída do programa e do Java incluído; a desinstalação as remove. |
+  | `.zip`, `.dmg` e `brModelo.jar` | Nenhuma além da trava do próprio processo. |
+
+  No Linux, a rede isolada não fecha o barramento da sessão, que o programa usa
+  para abrir o navegador; a leitura fora da janela não tem nenhum dos dois.
+
+**5. Apagar dados ao rodar o SQL gerado.** Um nome de tabela ou de diagrama
+recebido podia levar um comando como `DROP TABLE` para o script, e quem
+rodasse o SQL no banco da disciplina o executaria junto.
+
+- O NG põe entre aspas os nomes que poderiam carregar comandos; nomes comuns
+  saem como antes. `ON DELETE`, `ON UPDATE` e o separador aceitam só valores do
+  próprio SQL. Tipos e complementos de campo continuam sendo SQL escrito no
+  diagrama: revise o script de um diagrama recebido antes de executá-lo.
+
+**6. Perder o arquivo ao salvar.** Sem ataque nenhum, um salvamento
+interrompido, por exemplo com o disco cheio, deixava o arquivo cortado pela
+metade.
+
+- Cada gravação vai para um arquivo temporário na mesma pasta, é sincronizada
+  com o disco e só então substitui o original; se falhar no meio, o anterior
+  fica intacto.
+
+**Distribuição.** As bibliotecas são conferidas por checksum em todo build e
+verificadas na base [OSV](https://osv.dev) de vulnerabilidades a cada mudança,
+toda semana e antes de cada versão. Cada release publica `SHA256SUMS` e um
+atestado de procedência para cada arquivo, que pode ser conferido com
+`gh attestation verify ARQUIVO -R kpagnussat/brModeloNG`.
+
+> [!WARNING]
+> **O que não está coberto: teclas "digitadas" em outras janelas.** As camadas
+> acima impedem que o conteúdo de um arquivo recebido execute código na janela
+> do NG. Se um defeito ainda desconhecido permitisse isso, o código teria o que
+> a janela tem. Fora do Flatpak, são as permissões do usuário, porque a janela
+> precisa abrir e salvar os seus arquivos; nos pacotes, só a rede fica de fora.
+> No Flatpak, a janela não vê as suas pastas nem a rede, mas desenha pelo X11,
+> único caminho de tela do Java 21 no Linux. No X11, um programa com janela
+> pode enviar teclas a outras janelas: o código poderia "digitar" comandos num
+> terminal aberto, como um pendrive *Rubber Ducky*, e assim sair do sandbox.
+> No Wayland, isso alcança só os programas que também desenham pelo X11. Por
+> isso a leitura dos arquivos recebidos acontece num processo sem tela, e o NG
+> avisa uma vez quando inicia numa sessão X11. A lacuna só fecha numa versão
+> futura, com um Java que desenhe direto no Wayland; o Java 21 não faz isso.
+
+> [!TIP]
+> Para abrir arquivos de outras pessoas, prefira o **Flatpak** no Linux. No
+> Windows, prefira o **`.msi`** se quiser que o instalador aplique
+> automaticamente as regras do firewall, a segunda camada de rede.
+
+Encontrou uma falha de segurança? Avise em particular pelo
+[relato privado de vulnerabilidades](https://github.com/kpagnussat/brModeloNG/security/advisories/new)
+do GitHub, não por uma issue pública. Veja [SECURITY.md](SECURITY.md).
+
 ## Por dentro do código
 
 O NG **não é uma reescrita**. O brModelo funciona, é usado em aulas e tem anos
@@ -318,21 +497,9 @@ em passos pequenos, cada um protegido por testes, e **não muda o formato
 como opção, não como substituto, para quem quer versionar diagramas no Git sem
 abrir mão da compatibilidade.
 
-- **Segurança ao abrir arquivos.** O `.brM3` é serialização Java, e o oficial
-  o lê com um `ObjectInputStream` comum. Assim, um arquivo malicioso recebido
-  de outra pessoa pode executar código no computador só por ser aberto, um
-  ataque conhecido como *desserialização insegura*. O NG lê por uma lista de
-  classes permitidas: só os pacotes do brModelo e os tipos de valor do JDK que
-  o modelo usa. O resto é recusado antes de a classe ser carregada ou de
-  qualquer objeto ser construído, e proxies dinâmicos são sempre rejeitados. A
-  regra vale para diagramas, modelos reutilizáveis, recuperação e área de
-  transferência; o JSON segue a mesma lista e ainda valida campos, tipos e
-  referências. Os testes usam os pontos de entrada clássicos desse ataque e
-  verificam que são recusados sem que nenhum código deles rode.
-- **Sem acesso à rede.** O oficial verifica atualizações no site por HTTP, sem
-  criptografia. O NG não faz nenhuma chamada de rede: o menu
-  **Ajuda → Releases do brModelo NG** só abre a página no navegador, a ajuda é
-  local e o Flatpak não tem permissão de rede.
+- **Segurança.** Lista de classes permitidas, leitura fora da janela, limites de
+  entrada, gravação atômica e nenhuma chamada de rede, descritos em
+  [Segurança](#segurança).
 - **Build moderno.** O build Ant/NetBeans deu lugar ao Gradle com Java 21. As
   dependências vêm do Maven Central com verificação de checksum, e a integração
   contínua compila e testa no Linux, no Windows e no macOS.
@@ -463,9 +630,28 @@ official 3.3.2 on the same machine), 18 light and dark themes that can follow
 the desktop, HiDPI layouts, the desktop file chooser and an optional JSON
 format.
 
-Opening a file cannot run code: Java deserialization goes through a class
-allowlist, closing the insecure-deserialization hole of the official reader,
-and the app makes no network calls. Under the hood, the build moved to Gradle
+Received files are treated as untrusted. Java deserialization goes through a
+class allowlist, closing the insecure-deserialization hole of the official
+reader; `.brM3` and `.brMj` files are decoded in a separate process with memory
+and time limits, sandboxed with bubblewrap on Linux and in the Flatpak, while
+the window stays responsive and offers Cancel. Inputs are size-checked before
+reading, saves are atomic, and the app makes no network calls, with a second
+network barrier in the Flatpak, the Linux packages and the Windows installer.
+The Segurança section above lists each issue found, its risk for a teacher
+opening students' files and the fix. One gap remains: should an unknown defect
+let a file run code in the window, under X11 that code could type keystrokes
+into other windows, such as a terminal, which would also leave the Flatpak
+sandbox. Received files are therefore read in a process without a display,
+the app warns once when started in an X11 session, and the gap closes only in a
+future version built on a Java with native Wayland support.
+No protection replaces a careful user: check that a received file really is a
+diagram (`.brM3`, `.brMj` or `.xml`, not `work.brM3.exe`, `.jar`, `.lnk` or a
+`.zip` with a program inside), never open a file NG refused in official
+brModelo, which has none of these protections, and read the SQL generated from
+a received diagram before running it on a test database.
+Please report vulnerabilities privately through
+[GitHub](https://github.com/kpagnussat/brModeloNG/security/advisories/new) (see
+[SECURITY.md](SECURITY.md)). Under the hood, the build moved to Gradle
 and Java 21, the largest classes were split into helpers, and dead code and
 thread leaks were removed. **`.brM3` remains the default and compatible with
 official brModelo**, guarded by serialized-form and isolated official-jar

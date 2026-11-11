@@ -129,5 +129,15 @@ class JsonGraphTest {
         assertSame(copiedKey, copy.get(copiedKey));
         assertSame(copiedKey, ((Node) copiedKey).self);
     }
+    @Test void collectionsAreRefusedAsMapKeysBeforeConstruction() throws Exception {
+        // Hashing a list or map key walks its content; the reader refuses them while validating.
+        HashMap<Object, Object> map = new HashMap<>();
+        map.put(new ArrayList<>(Arrays.asList("a")), "valor");
+        IOException erro = assertThrows(IOException.class, () -> roundTrip(map));
+        assertEquals("Map key cannot be a collection: java.util.ArrayList", erro.getMessage());
+        HashMap<Object, Object> aninhado = new HashMap<>();
+        aninhado.put(new HashMap<>(Map.of("k", "v")), "valor");
+        assertThrows(IOException.class, () -> roundTrip(aninhado));
+    }
 
 }

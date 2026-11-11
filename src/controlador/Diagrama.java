@@ -329,7 +329,9 @@ public class Diagrama implements Serializable, ClipboardOwner {
     public TreeItem AtualizeTreeNavegacao(boolean atualisar) {
         if (atualisar || TreeNavegacao == null) {
             TreeNavegacao = new TreeItem(getNomeFormatado());
-            getListaDeItens().stream().filter((it) -> (it instanceof Forma)).map(it -> (Forma) it).forEach((it) -> {
+            // The selection rectangle lives among the items while it is dragged; it is not an
+            // object of the diagram and has no icon (issue #31 of the original brModelo).
+            getListaDeItens().stream().filter((it) -> (it instanceof Forma && !(it instanceof Selecionador))).map(it -> (Forma) it).forEach((it) -> {
                 it.MostreSeParaExibicao(TreeNavegacao);
             });
         }
@@ -562,6 +564,8 @@ public class Diagrama implements Serializable, ClipboardOwner {
     }
 
     public void mousePressed(MouseEvent e) {
+        // Before the click changes the selection; focus loss would arrive only afterwards.
+        master.ConfirmeEdicaoInspector();
         master.requestFocus();
         e = tradutorZoom(e);
 
@@ -842,7 +846,7 @@ public class Diagrama implements Serializable, ClipboardOwner {
     }
 
     public void mouseWheelMoved(MouseWheelEvent e) {
-        if (e.isControlDown()) {
+        if (util.Atalhos.pressionado(e)) {
             if (e.getWheelRotation() < 0) {
                 getEditor().ZoomMais();
             } else {
@@ -1045,7 +1049,7 @@ public class Diagrama implements Serializable, ClipboardOwner {
         FormaElementar item = itensSelecionados.get(0);
         int x = 0, y = 0;
         int inc = 3;
-        if (e.isControlDown()) {
+        if (util.Atalhos.pressionado(e)) {
             inc = 1;
         }
 
@@ -1273,6 +1277,18 @@ public class Diagrama implements Serializable, ClipboardOwner {
         }
     }
 
+    /**
+     * After a palette tool created an object: the tool stays while Ctrl is held or when it was
+     * chosen with a double click (Editor.isFerramentaFixa); otherwise the arrow comes back.
+     */
+    protected void ManterOuSoltarComando(Controler.Comandos com) {
+        if (master.isControlDown() || master.isFerramentaFixa()) {
+            setComando(com);
+        } else {
+            setComando(null);
+        }
+    }
+
     public Controler.Comandos getComando() {
         return comando;
     }
@@ -1376,11 +1392,7 @@ public class Diagrama implements Serializable, ClipboardOwner {
         cliq1 = null;
         cliq2 = null;
 
-        if (!master.isControlDown()) {
-            setComando(null);
-        } else {
-            setComando(com);
-        }
+        ManterOuSoltarComando(com);
         if (resu != null) {
             resu.BringToFront();
         }

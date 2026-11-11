@@ -26,7 +26,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -47,7 +46,6 @@ public class Desenhador extends Forma implements iBaseDrawer {
     public final int TIPOIMG = 1;
     public final int TIPODEZ = 2;
     private int tipo = 1;
-    private transient BufferedImage imgSeta = null;
     private transient BufferedImage imagem = null;
     private float alfa = 1f;
     private String imgName = "";
@@ -128,7 +126,7 @@ public class Desenhador extends Forma implements iBaseDrawer {
             g.setColor(bkp);
             g.setClip(bkpA);
         }
-        if (imgres == null && imgSeta == null && (!isTipoDesenho())) {
+        if (imgres == null && !isTipoSeta() && !isTipoDesenho()) {
             Color bkp = g.getColor();
             g.setColor(isDisablePainted()? disabledColor : Color.LIGHT_GRAY);
             g.drawRect(getLeft(), getTop(), getWidth() - 1, getHeight() - 1);
@@ -224,61 +222,63 @@ public class Desenhador extends Forma implements iBaseDrawer {
     }
 
     private void DrawSeta(Graphics2D g) {
-        if (imgSeta == null) {
-            Rectangle recSeta = null;
-            Rectangle pos = new Rectangle(0, 0, getWidth() - 4, getHeight() - 4);
-            int angulo = getAnguloSeta();
-            if (angulo < 0) {
-                angulo *= -1;
-            }
-            while (angulo > 180) {
-                angulo -= 180;
-            }
-
-            int x, y, y2, x2;
-
-            double catOp = (double) pos.height / 2;
-            double senORcos = Math.sin(Math.toRadians(angulo));
-            double hip = catOp / senORcos;
-            double catAd = Math.sqrt((hip * hip) - (catOp * catOp));
-
-            if (catAd <= (pos.width / 2)) {
-                int rec = (int) ((pos.width - (2 * catAd)) / 2);
-                x = rec + pos.x;
-                y = 0 + pos.y;
-                y2 = 0 + pos.height + pos.y;
-                x2 = -rec + pos.x + pos.width;
-                if (angulo > 90) {
-                    int tmp = x;
-                    x = x2;
-                    x2 = tmp;
-                }
-            } else {
-                catAd = pos.width / 2;
-                senORcos = Math.cos(Math.toRadians(angulo));
-                hip = catAd / senORcos;
-                catOp = Math.sqrt((hip * hip) - (catAd * catAd));
-                int rec = (int) ((pos.height - (2 * catOp)) / 2);
-                x = pos.x;
-                y = rec + pos.y;
-                y2 = pos.height + pos.y - rec;
-                x2 = pos.x + pos.width;
-                if (angulo > 90) {
-                    int tmp = y;
-                    y = y2;
-                    y2 = tmp;
-                }
-            }
-            recSeta = new Rectangle(x + desvioX, y + desvioY, x2 - desvioX, y2 - desvioY);
-
-            BufferedImage bi = new BufferedImage(pos.width, pos.height, BufferedImage.TYPE_INT_ARGB);
-            Graphics gg = bi.getGraphics();
-            gg.setColor(getSetaCor());
-            drawArrow((Graphics2D) gg, recSeta.x, recSeta.y, recSeta.width, recSeta.height);
-            imgSeta = bi;
+        Rectangle recSeta = null;
+        Rectangle pos = new Rectangle(0, 0, getWidth() - 4, getHeight() - 4);
+        int angulo = getAnguloSeta();
+        if (angulo < 0) {
+            angulo *= -1;
+        }
+        while (angulo > 180) {
+            angulo -= 180;
         }
 
-        g.drawImage(imgSeta, getLeft() + 2, getTop() + 2, null);
+        int x, y, y2, x2;
+
+        double catOp = (double) pos.height / 2;
+        double senORcos = Math.sin(Math.toRadians(angulo));
+        double hip = catOp / senORcos;
+        double catAd = Math.sqrt((hip * hip) - (catOp * catOp));
+
+        if (catAd <= (pos.width / 2)) {
+            int rec = (int) ((pos.width - (2 * catAd)) / 2);
+            x = rec + pos.x;
+            y = 0 + pos.y;
+            y2 = 0 + pos.height + pos.y;
+            x2 = -rec + pos.x + pos.width;
+            if (angulo > 90) {
+                int tmp = x;
+                x = x2;
+                x2 = tmp;
+            }
+        } else {
+            catAd = pos.width / 2;
+            senORcos = Math.cos(Math.toRadians(angulo));
+            hip = catAd / senORcos;
+            catOp = Math.sqrt((hip * hip) - (catAd * catAd));
+            int rec = (int) ((pos.height - (2 * catOp)) / 2);
+            x = pos.x;
+            y = rec + pos.y;
+            y2 = pos.height + pos.y - rec;
+            x2 = pos.x + pos.width;
+            if (angulo > 90) {
+                int tmp = y;
+                y = y2;
+                y2 = tmp;
+            }
+        }
+        recSeta = new Rectangle(x + desvioX, y + desvioY, x2 - desvioX, y2 - desvioY);
+
+        // Drawn straight onto the canvas, clipped to the shape: an intermediate image the
+        // size of the shape would let a file allocate gigabytes.
+        Graphics2D gg = (Graphics2D) g.create();
+        try {
+            gg.translate(getLeft() + 2, getTop() + 2);
+            gg.clipRect(0, 0, pos.width, pos.height);
+            gg.setColor(getSetaCor());
+            drawArrow(gg, recSeta.x, recSeta.y, recSeta.width, recSeta.height);
+        } finally {
+            gg.dispose();
+        }
     }
 
     private void drawArrow(Graphics2D g, int x1, int y1, int x2, int y2) {
@@ -304,7 +304,7 @@ public class Desenhador extends Forma implements iBaseDrawer {
         int len = (int) Math.sqrt(dx * dx + dy * dy);
         AffineTransform at = AffineTransform.getTranslateInstance(x1, y1);
         at.concatenate(AffineTransform.getRotateInstance(angle));
-        g.setTransform(at);
+        g.transform(at);
 
         // Draw horizontal arrow starting in (0, 0)
         g.drawLine(ARR_SIZE, 0, len - ARR_SIZE, 0);
@@ -323,11 +323,6 @@ public class Desenhador extends Forma implements iBaseDrawer {
     @Override
     public void ReSized() {
         super.ReSized();
-        if (isTipoSeta() && imgSeta != null) {
-            if (imgSeta.getWidth() + 4 != getWidth() || imgSeta.getHeight() + 4 != getHeight()) {
-                imgSeta = null;
-            }
-        }
         if (isTipoImg() && imgres != null) {
             if (imgres.getWidth(null) + 4 != getWidth() || imgres.getHeight(null) + 4 != getHeight()) {
                 imgres = null;
@@ -408,7 +403,6 @@ public class Desenhador extends Forma implements iBaseDrawer {
     }
 
     private void ReajusteDesenho() {
-        imgSeta = null;
         imgres = null;
         imagem = null;
         byteImage = null;
@@ -434,7 +428,10 @@ public class Desenhador extends Forma implements iBaseDrawer {
         }
         Rectangle rec = getBounds();
         rec.grow(-2, -2);
-        if (imgres == null) {
+        // The smooth scaled copy is cached up to the pixel limit; a larger shape scales the
+        // picture while drawing, so its size costs no memory.
+        boolean emCache = (long) rec.width * rec.height <= util.LimitesEntrada.PIXELS_IMAGEM;
+        if (imgres == null && emCache) {
             imgres = imgB.getScaledInstance(rec.width, rec.height, Image.SCALE_SMOOTH);
         }
 
@@ -443,25 +440,30 @@ public class Desenhador extends Forma implements iBaseDrawer {
             int type = AlphaComposite.SRC_OVER;
             g.setComposite(AlphaComposite.getInstance(type, alfa));
         }
-        Image img = imgres;
+        Image img = emCache ? imgres : imgB;
         if (isDisablePainted()) {
-            img = util.TratadorDeImagens.dye(new ImageIcon(imgres), disabledColor);
+            img = util.TratadorDeImagens.dye(new ImageIcon(img), disabledColor);
         }
         
-        g.drawImage(img, rec.x, rec.y, null);
+        g.drawImage(img, rec.x, rec.y, rec.width, rec.height, null);
         g.setComposite(originalComposite);
     }
 
     public BufferedImage getImagem() {
-        if (imagem == null && byteImage != null) {
+        if (imagem == null && byteImage != null && !imagemRecusada) {
             imagem = fromByteArray(byteImage);
+            // Bytes that do not decode (or exceed the pixel limit) are kept for saving but
+            // not retried on every repaint, which would log the same error each time.
+            imagemRecusada = imagem == null;
         }
         return imagem;
     }
+    private transient boolean imagemRecusada = false;
 
     public void setImagem(BufferedImage imagem) {
         byteImage = toByteArray(imagem);
         this.imagem = imagem;
+        imagemRecusada = false;
     }
     private byte[] byteImage = null;
 
@@ -482,7 +484,7 @@ public class Desenhador extends Forma implements iBaseDrawer {
         try {
             File fimg = new File(arq);
             setImgName(fimg.getName());
-            setImagem(ImageIO.read(fimg));
+            setImagem(util.TratadorDeImagens.ler(fimg, fimg.getName()));
             Proporcao();
             InvalidateArea();
         } catch (IOException iOException) {

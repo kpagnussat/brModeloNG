@@ -64,7 +64,7 @@ class BundledHelpTest {
             assertNull(uri.getHost());
             assertEquals(index.toUri(), uri);
             assertEquals(uri, address.invoke(null, index.resolveSibling("index.html"), true));
-            var command = opener.getDeclaredMethod("comandoNavegador", java.net.URI.class, boolean.class);
+            var command = loader.loadClass("util.Navegador").getDeclaredMethod("comandoXdgOpen", java.net.URI.class, boolean.class);
             command.setAccessible(true);
             assertEquals(java.util.List.of("xdg-open", index.toString()), command.invoke(null, uri, true));
             assertEquals(java.util.List.of("xdg-open", uri.toASCIIString()), command.invoke(null, uri, false));

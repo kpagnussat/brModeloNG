@@ -2,6 +2,7 @@ package controlador;
 
 import java.io.File;
 import java.awt.Point;
+import java.util.concurrent.CompletableFuture;
 import java.awt.image.BufferedImage;
 import desenho.FormaElementar;
 import javax.swing.JOptionPane;
@@ -31,11 +32,21 @@ final class ArquivosEditor {
         });
     }
 
-    static void AbrirDiagramaFromFile(Editor editor, File arq) {
+    /**
+     * Opens a diagram file; completes on the EDT with the diagram installed, or null. Model
+     * files (.brM3, .brMj) are read in the background (AberturaEmSegundoPlano); the legacy
+     * XML format, parsed here under XMLGenerate's limits, still opens before this returns.
+     */
+    static CompletableFuture<Diagrama> AbrirDiagramaFromFile(Editor editor, File arq) {
+        if (arq != null && util.Arquivo.IsModelo(arq)) {
+            if (editor.IsOpen(arq)) return CompletableFuture.completedFuture(null);
+            return AberturaEmSegundoPlano.abrir(editor, arq);
+        }
         Diagrama res = Diagrama.LoadFromFile(arq, editor);
         if (res != null) {
-            editor.ProcessePosOpen(res, !util.Arquivo.IsModelo(arq));
+            editor.ProcessePosOpen(res, true);
         }
+        return CompletableFuture.completedFuture(res);
     }
 
     static void ProcessePosOpen(Editor editor, Diagrama res, boolean isXml) {
@@ -88,8 +99,9 @@ final class ArquivosEditor {
 
             case cmdOpen:
                 File arq = util.Dialogos.ShowDlgLoadDiagrama(editor.diagramaAtual.getArquivo(), editor);
-                AbrirDiagramaFromFile(editor, arq);
-                editor.ChecarArquivosBiAbertos(editor.diagramaAtual);
+                AbrirDiagramaFromFile(editor, arq).thenAccept(aberto -> {
+                    if (aberto != null) editor.ChecarArquivosBiAbertos(aberto);
+                });
                 break;
             case cmdCopyImg:
                 final int borda = 2;
@@ -116,11 +128,8 @@ final class ArquivosEditor {
                 if (arqui != null) {
                     Point p = editor.diagramaAtual.getPontoExtremo();
                     BufferedImage img = util.ImageGenerate.geraImagemForPrn(editor.diagramaAtual, p.x, p.y);
-                    if (util.Arquivo.IsBMP(arqui)) {
-                        javax.imageio.ImageIO.write(img, util.Arquivo.bmp.toUpperCase(), arqui);
-                    } else {
-                        javax.imageio.ImageIO.write(img, util.Arquivo.png.toUpperCase(), arqui);
-                    }
+                    String formato = (util.Arquivo.IsBMP(arqui) ? util.Arquivo.bmp : util.Arquivo.png).toUpperCase();
+                    util.GravacaoAtomica.gravar(arqui.toPath(), saida -> javax.imageio.ImageIO.write(img, formato, saida));
                 }
                 break;
 

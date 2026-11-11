@@ -240,8 +240,15 @@ public class Impressor extends BaseControlador {
         int w = (int) (LarguraPagina * proporcao);
         int h = (int) (AlturaPagina * proporcao);
 
-        BufferedImage img = util.ImageGenerate.geraImagemForPrn(getDiagrama(),
-                w * PaginasW, h * PaginasH);
+        BufferedImage img;
+        try {
+            img = util.ImageGenerate.geraImagemForPrn(getDiagrama(), w * PaginasW, h * PaginasH);
+        } catch (util.LimitesEntrada.Excedido e) {
+            // No pages: the preview stays blank and printing does nothing.
+            util.BrLogger.Logger("ERROR_IMAGE_TOO_LARGE", e.getMessage());
+            imgs = null;
+            return false;
+        }
 
         imgs = util.ImageGenerate.SplitImagens(img, w, h, PaginasW, PaginasH, getQtdPagina());
         return true;

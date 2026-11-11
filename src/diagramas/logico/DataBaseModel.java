@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  *
@@ -58,9 +59,14 @@ public class DataBaseModel implements Serializable {
 
     List<String> dataTypes = null;
     
+    // Types added after files were already saved with this model. Those files bring the old
+    // map (and possibly the cached list), so these are offered on top of what is stored.
+    // Static: not part of the serialized form.
+    private static final List<String> TIPOS_ACRESCENTADOS = List.of("UUID");
+    
     public List<String> getDataTypes() {
-        if (dataTypes == null) {
-            dataTypes = dataTypesToJava.keySet().stream().sorted((s1, s2) -> s1.compareTo(s2)).collect(Collectors.toList());
+        if (dataTypes == null || !dataTypes.containsAll(TIPOS_ACRESCENTADOS)) {
+            dataTypes = Stream.concat(dataTypesToJava.keySet().stream(), TIPOS_ACRESCENTADOS.stream()).distinct().sorted().collect(Collectors.toList());
         }
         return dataTypes;
     }
@@ -459,6 +465,7 @@ public class DataBaseModel implements Serializable {
         dataTypesToJava.put("TIME", "Date");
         dataTypesToJava.put("TIMESTAMP", "Date");
         dataTypesToJava.put("VARCHAR", "String");
+        dataTypesToJava.put("UUID", "java.util.UUID"); // issue #11 of the original brModelo
         dataTypesToJava.put("XML", "org.w3c.dom.Document");
     }
     
